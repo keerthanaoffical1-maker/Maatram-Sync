@@ -80,7 +80,7 @@ export function generateCandidateSlots(durationHours = 2): CandidateSlotDefiniti
     ];
   }
 
-  // 3-Hour Windows (Intensive bootcamps / hackathons)
+  // 3-Hour Windows
   if (durationHours === 3) {
     return [
       { slotId: '09:00', startTime: '09:00', endTime: '12:00', label: '09:00 AM - 12:00 PM', period: 'morning', subSlots: ['09:00', '10:00', '11:00'] },
@@ -89,7 +89,7 @@ export function generateCandidateSlots(durationHours = 2): CandidateSlotDefiniti
     ];
   }
 
-  // Default: 2-Hour Windows (Standard Workshops / Mock Interviews)
+  // Default: 2-Hour Windows
   return [
     { slotId: '09:00', startTime: '09:00', endTime: '11:00', label: '09:00 AM - 11:00 AM', period: 'morning', subSlots: ['09:00', '10:00'] },
     { slotId: '10:00', startTime: '10:00', endTime: '12:00', label: '10:00 AM - 12:00 PM', period: 'morning', subSlots: ['10:00', '11:00'] },
@@ -112,7 +112,6 @@ export function filterAudienceStudents(
   students: StudentDirectoryItem[],
   criteria: AvailabilityFilterCriteria,
 ): StudentDirectoryItem[] {
-  // Deduplicate by ID
   const seenIds = new Set<string>();
   const uniqueStudents: StudentDirectoryItem[] = [];
 
@@ -125,7 +124,7 @@ export function filterAudienceStudents(
   }
 
   return uniqueStudents.filter((s) => {
-    // 1. Exclude inactive scholars (active status check)
+    // 1. Exclude inactive scholars
     if (s.enrollmentStatus && s.enrollmentStatus !== 'Active') {
       return false;
     }
@@ -135,30 +134,23 @@ export function filterAudienceStudents(
       return criteria.selectedStudentIds.includes(s.id);
     }
 
-    // 3. Institution filter (if non-empty)
+    // 3. Institution filter
     if (criteria.institutions && criteria.institutions.length > 0) {
       if (!criteria.institutions.includes(s.institution)) {
         return false;
       }
     }
 
-    // 4. Academic Year filter (if non-empty)
+    // 4. Academic Year filter
     if (criteria.academicYears && criteria.academicYears.length > 0) {
       if (!criteria.academicYears.includes(s.academicYear)) {
         return false;
       }
     }
 
-    // 5. Department filter (if non-empty)
+    // 5. Department filter
     if (criteria.departments && criteria.departments.length > 0) {
       if (!criteria.departments.includes(s.department)) {
-        return false;
-      }
-    }
-
-    // 6. Group/Category filter (if non-empty)
-    if (criteria.groupCategories && criteria.groupCategories.length > 0) {
-      if (!criteria.groupCategories.includes(s.groupCategory)) {
         return false;
       }
     }
@@ -169,16 +161,6 @@ export function filterAudienceStudents(
 
 /**
  * Evaluates whether a student is 'available', 'unavailable', or 'unknown' for a candidate time window.
- *
- * Rules:
- * 1. Confirmed Available:
- *    Student has explicitly confirmed 'available' for ALL required sub-slots of the candidate window.
- * 2. Confirmed Unavailable:
- *    Student has explicitly marked 'unavailable' for at least ONE sub-slot.
- * 3. Unknown:
- *    No explicit 'unavailable', but one or more sub-slots have no entry or unconfirmed status.
- *
- * Missing availability is strictly treated as unknown, NEVER assumed available or automatically unavailable.
  */
 export function evaluateStudentSlotState(
   studentSlots: Record<string, SlotStatus | string | undefined>,
@@ -199,11 +181,10 @@ export function evaluateStudentSlotState(
 
     if (status === 'unavailable') {
       anyUnavailable = true;
-      break; // Immediate disqualification for this window
+      break;
     } else if (status === 'available') {
-      // Confirmed available for this slice
+      // Confirmed available
     } else {
-      // Either undefined, missing submission, or 'unselected' / 'tentative'
       allAvailable = false;
       hasMissing = true;
     }
@@ -220,7 +201,6 @@ export function evaluateStudentSlotState(
 
 /**
  * Calculates submission coverage across the audience for a given date range.
- * Returns how many students have submitted at least one availability entry in the date window.
  */
 export function calculateAudienceCoverage(
   students: StudentDirectoryItem[],
@@ -321,7 +301,6 @@ export function buildDateList(startDate: string, endDate: string): string[] {
 
 /**
  * The Core Smart Availability Recommendation Engine.
- * Evaluates all dates in range across candidate time slots based on event duration and audience criteria.
  */
 export function runSmartRecommendationEngine(
   allStudents: StudentDirectoryItem[],
@@ -379,8 +358,6 @@ export function runSmartRecommendationEngine(
       const unknownCount = unknownStudentIds.length;
       const submittedCount = availableCount + unavailableCount;
 
-      // Exact percentage formula from specification:
-      // Availability percentage = (Number of eligible students available / Total eligible students) × 100
       const percentage =
         totalEligible > 0 ? Math.round((availableCount / totalEligible) * 100) : 0;
 
@@ -415,11 +392,6 @@ export function runSmartRecommendationEngine(
   });
 
   // 6. Stable Sorting of candidate slots:
-  // 1) Availability percentage DESC
-  // 2) Available count DESC
-  // 3) Submission coverage DESC
-  // 4) Date ASC
-  // 5) Start time ASC
   const sortedSlots = [...results].sort((a, b) => {
     if (b.percentage !== a.percentage) return b.percentage - a.percentage;
     if (b.availableCount !== a.availableCount) return b.availableCount - a.availableCount;
@@ -434,15 +406,10 @@ export function runSmartRecommendationEngine(
   const topRecommendations: RecommendationCard[] = [];
 
   if (sortedSlots.length > 0 && totalEligible > 0) {
-    // Top 1: Highest ranked slot
     const top1 = sortedSlots[0];
-
-    // Top 2: Prefer a different day or distinct window if available for diversity
     const top2 =
       sortedSlots.find((s) => s.date !== top1.date || s.slotId !== top1.slotId) ||
       sortedSlots[1];
-
-    // Top 3: Third distinct option
     const top3 =
       sortedSlots.find(
         (s) =>
@@ -456,7 +423,7 @@ export function runSmartRecommendationEngine(
       const rank = (index + 1) as 1 | 2 | 3;
       const tag =
         rank === 1
-          ? 'Peak Cohort Alignment'
+          ? 'Peak Attendance Window'
           : rank === 2
             ? 'Strong Alternative Window'
             : 'Viable Backup Slot';

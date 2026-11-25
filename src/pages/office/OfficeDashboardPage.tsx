@@ -9,7 +9,6 @@ export default function OfficeDashboardPage() {
     'students',
     'analysis',
     'events',
-    'invitations',
     'sessions',
   ];
 

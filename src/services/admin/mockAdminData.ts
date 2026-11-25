@@ -3,7 +3,6 @@ import type {
   AdminOverviewMetrics,
   AdminStudentItem,
   AdminUser,
-  CategoryGroupItem,
   InstitutionItem,
 } from '../../types/admin';
 import { INITIAL_STUDENTS_DIRECTORY } from '../office/mockOfficeData';
@@ -112,28 +111,6 @@ export const INITIAL_INSTITUTIONS: InstitutionItem[] = [
   },
 ];
 
-export const INITIAL_CATEGORIES: CategoryGroupItem[] = [
-  // Academic Years
-  { id: 'cat-ay-1', name: '1st Year', type: 'academicYear', description: 'Freshmen scholars (2026 - 2030 Batch)', studentCount: 0, createdAt: '2026-06-01' },
-  { id: 'cat-ay-2', name: '2nd Year', type: 'academicYear', description: 'Sophomore scholars (2025 - 2029 Batch)', studentCount: 22, createdAt: '2026-06-01' },
-  { id: 'cat-ay-3', name: '3rd Year', type: 'academicYear', description: 'Pre-final year scholars (2024 - 2028 Batch)', studentCount: 23, createdAt: '2026-06-01' },
-  { id: 'cat-ay-4', name: '4th Year', type: 'academicYear', description: 'Final year graduating scholars (2023 - 2027 Batch)', studentCount: 20, createdAt: '2026-06-01' },
-
-  // Departments
-  { id: 'cat-dept-1', name: 'Computer Science & Engineering', type: 'department', description: 'Software engineering, algorithms and full-stack systems', studentCount: 16, createdAt: '2026-06-01' },
-  { id: 'cat-dept-2', name: 'Information Technology', type: 'department', description: 'Web architectures, cloud and networking', studentCount: 14, createdAt: '2026-06-01' },
-  { id: 'cat-dept-3', name: 'Electronics & Communication Engineering', type: 'department', description: 'VLSI, embedded systems and signal processing', studentCount: 12, createdAt: '2026-06-01' },
-  { id: 'cat-dept-4', name: 'Electrical & Electronics Engineering', type: 'department', description: 'Power systems, microgrids and control systems', studentCount: 8, createdAt: '2026-06-01' },
-  { id: 'cat-dept-5', name: 'Mechanical Engineering', type: 'department', description: 'Thermal design, robotics and manufacturing automation', studentCount: 7, createdAt: '2026-06-01' },
-  { id: 'cat-dept-6', name: 'Data Science & AI', type: 'department', description: 'Machine learning, predictive models and big data', studentCount: 8, createdAt: '2026-06-01' },
-
-  // Cohort Groups
-  { id: 'cat-grp-1', name: 'Tech Cohort 2024', type: 'cohortGroup', description: 'Specialized software development and cloud engineering guild', studentCount: 24, createdAt: '2026-06-01' },
-  { id: 'cat-grp-2', name: 'Data & AI Cohort', type: 'cohortGroup', description: 'Data engineering, analytics and machine learning research circle', studentCount: 15, createdAt: '2026-06-01' },
-  { id: 'cat-grp-3', name: 'Core Engineering Guild', type: 'cohortGroup', description: 'Embedded systems, automotive electronics and mechanical hardware', studentCount: 14, createdAt: '2026-06-01' },
-  { id: 'cat-grp-4', name: 'Placement Readiness Track', type: 'cohortGroup', description: 'Fast-track aptitude, personal branding and interview drills', studentCount: 12, createdAt: '2026-06-01' },
-];
-
 export const INITIAL_ADMIN_STUDENTS: AdminStudentItem[] = INITIAL_STUDENTS_DIRECTORY.map((s, idx) => ({
   id: s.id,
   studentId: s.studentId,
@@ -143,15 +120,10 @@ export const INITIAL_ADMIN_STUDENTS: AdminStudentItem[] = INITIAL_STUDENTS_DIREC
   institution: s.institution,
   department: s.department,
   academicYear: s.academicYear,
-  groupCategory: s.groupCategory,
   accountStatus: (idx === 14 ? 'Inactive' : idx === 37 ? 'Suspended' : 'Active') as AdminStudentItem['accountStatus'],
   registrationDate: `2026-11-${String((idx % 18) + 1).padStart(2, '0')}`,
   availabilityStatus: s.availabilityStatus,
   location: s.location,
-  skills: s.skills,
-  bio: s.bio,
-  linkedinUrl: s.linkedinUrl,
-  githubUrl: s.githubUrl,
 }));
 
 export const INITIAL_ADMIN_ACTIVITIES: AdminActivityItem[] = [
@@ -168,7 +140,7 @@ export const INITIAL_ADMIN_ACTIVITIES: AdminActivityItem[] = [
     id: 'adm-act-2',
     action: 'Bulk Import Executed',
     adminName: 'Dr. Ananya Sundaram',
-    affectedRecord: 'MIT Chromepet Cohort (12 Scholars)',
+    affectedRecord: 'MIT Chromepet Scholars (12 Scholars)',
     timestamp: '5 hours ago',
     actionType: 'Import',
     details: 'Processed CSV import: 12 valid records committed, 0 duplicate conflicts.',
@@ -200,15 +172,6 @@ export const INITIAL_ADMIN_ACTIVITIES: AdminActivityItem[] = [
     actionType: 'Status Change',
     details: 'Temporarily deactivated account due to external semester internship leave.',
   },
-  {
-    id: 'adm-act-6',
-    action: 'Category Added',
-    adminName: 'Dr. Ananya Sundaram',
-    affectedRecord: 'Cohort "Placement Readiness Track"',
-    timestamp: '4 days ago',
-    actionType: 'Create',
-    details: 'Created new categorization group for final year placement preparation.',
-  },
 ];
 
 export const INITIAL_ADMIN_METRICS: AdminOverviewMetrics = {
@@ -216,6 +179,5 @@ export const INITIAL_ADMIN_METRICS: AdminOverviewMetrics = {
   totalInstitutions: INITIAL_INSTITUTIONS.length,
   activeStudents: INITIAL_ADMIN_STUDENTS.filter((s) => s.accountStatus === 'Active').length,
   studentsAddedRecently: 8,
-  totalCohorts: INITIAL_CATEGORIES.filter((c) => c.type === 'cohortGroup').length,
   systemHealth: '100% Operational',
 };

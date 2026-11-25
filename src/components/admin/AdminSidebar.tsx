@@ -1,7 +1,6 @@
 import {
   Building2,
   FileSpreadsheet,
-  FolderTree,
   History,
   LayoutDashboard,
   LogOut,
@@ -17,7 +16,6 @@ export type AdminNavTab =
   | 'registration'
   | 'students'
   | 'institutions'
-  | 'categories'
   | 'activity';
 
 interface AdminSidebarProps {
@@ -65,7 +63,6 @@ export function AdminSidebar({
       icon: Building2,
       badge: totalInstitutionsCount,
     },
-    { id: 'categories', label: 'Categories & Groups', icon: FolderTree },
     { id: 'activity', label: 'Admin Activity Log', icon: History },
   ];
 

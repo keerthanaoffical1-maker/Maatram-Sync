@@ -27,10 +27,10 @@ import {
 } from 'lucide-react';
 import type {
   AdminStudentItem,
-  CategoryGroupItem,
   InstitutionItem,
 } from '../../types/admin';
 import { adminService } from '../../services/admin/adminService';
+import { DEPARTMENTS_LIST } from '../../services/office/mockOfficeData';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { Card, CardContent } from '../ui/Card';
@@ -40,7 +40,6 @@ import { Modal } from '../ui/Modal';
 interface AdminStudentDirectoryTabProps {
   students: AdminStudentItem[];
   institutions: InstitutionItem[];
-  categories: CategoryGroupItem[];
   initialSearchQuery?: string;
   onStudentUpdated: (student: AdminStudentItem) => void;
   onShowToast: (message: string, type?: 'success' | 'error' | 'info') => void;
@@ -49,7 +48,6 @@ interface AdminStudentDirectoryTabProps {
 export function AdminStudentDirectoryTab({
   students,
   institutions,
-  categories,
   initialSearchQuery = '',
   onStudentUpdated,
   onShowToast,
@@ -65,7 +63,6 @@ export function AdminStudentDirectoryTab({
   const [selectedInst, setSelectedInst] = useState('All');
   const [selectedYear, setSelectedYear] = useState('All');
   const [selectedDept, setSelectedDept] = useState('All');
-  const [selectedGroup, setSelectedGroup] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('All');
 
   // Sorting
@@ -85,7 +82,6 @@ export function AdminStudentDirectoryTab({
   const [editInst, setEditInst] = useState('');
   const [editDept, setEditDept] = useState('');
   const [editYear, setEditYear] = useState<AdminStudentItem['academicYear']>('3rd Year');
-  const [editGroup, setEditGroup] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
 
   // Filter application
@@ -105,12 +101,11 @@ export function AdminStudentDirectoryTab({
       if (selectedInst !== 'All' && s.institution !== selectedInst) return false;
       if (selectedYear !== 'All' && s.academicYear !== selectedYear) return false;
       if (selectedDept !== 'All' && s.department !== selectedDept) return false;
-      if (selectedGroup !== 'All' && s.groupCategory !== selectedGroup) return false;
       if (selectedStatus !== 'All' && s.accountStatus !== selectedStatus) return false;
 
       return true;
     });
-  }, [students, search, selectedInst, selectedYear, selectedDept, selectedGroup, selectedStatus]);
+  }, [students, search, selectedInst, selectedYear, selectedDept, selectedStatus]);
 
   // Sort application
   const sorted = useMemo(() => {
@@ -139,7 +134,6 @@ export function AdminStudentDirectoryTab({
     (selectedInst !== 'All' ? 1 : 0) +
     (selectedYear !== 'All' ? 1 : 0) +
     (selectedDept !== 'All' ? 1 : 0) +
-    (selectedGroup !== 'All' ? 1 : 0) +
     (selectedStatus !== 'All' ? 1 : 0) +
     (search.trim() ? 1 : 0);
 
@@ -148,7 +142,6 @@ export function AdminStudentDirectoryTab({
     setSelectedInst('All');
     setSelectedYear('All');
     setSelectedDept('All');
-    setSelectedGroup('All');
     setSelectedStatus('All');
   };
 
@@ -161,7 +154,6 @@ export function AdminStudentDirectoryTab({
     setEditInst(student.institution);
     setEditDept(student.department);
     setEditYear(student.academicYear);
-    setEditGroup(student.groupCategory);
   };
 
   const handleSaveEdit = async (e: React.FormEvent) => {
@@ -178,7 +170,6 @@ export function AdminStudentDirectoryTab({
         institution: editInst.trim(),
         department: editDept.trim(),
         academicYear: editYear,
-        groupCategory: editGroup.trim(),
       });
 
       onStudentUpdated(updated);
@@ -203,8 +194,7 @@ export function AdminStudentDirectoryTab({
     }
   };
 
-  const departmentsList = categories.filter((c) => c.type === 'department');
-  const cohortGroupsList = categories.filter((c) => c.type === 'cohortGroup');
+  const departmentsList = DEPARTMENTS_LIST;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -267,8 +257,8 @@ export function AdminStudentDirectoryTab({
             </div>
           </div>
 
-          {/* 5 Dropdown Filters */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 pt-2 border-t border-charcoal/10">
+          {/* 4 Dropdown Filters */}
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2 border-t border-charcoal/10">
             {/* Institution */}
             <div>
               <label className="block text-[10px] font-bold text-charcoal/70 mb-1">
@@ -317,28 +307,9 @@ export function AdminStudentDirectoryTab({
                 className="w-full rounded-lg border border-charcoal/20 bg-offwhite/50 p-2 text-xs text-ink focus:bg-white focus:border-ink focus:outline-none focus:ring-1 focus:ring-gold"
               >
                 <option value="All">All Departments</option>
-                {departmentsList.map((d) => (
-                  <option key={d.id} value={d.name}>
-                    {d.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Cohort Group */}
-            <div>
-              <label className="block text-[10px] font-bold text-charcoal/70 mb-1">
-                Cohort Group
-              </label>
-              <select
-                value={selectedGroup}
-                onChange={(e) => setSelectedGroup(e.target.value)}
-                className="w-full rounded-lg border border-charcoal/20 bg-offwhite/50 p-2 text-xs text-ink focus:bg-white focus:border-ink focus:outline-none focus:ring-1 focus:ring-gold"
-              >
-                <option value="All">All Cohorts</option>
-                {cohortGroupsList.map((c) => (
-                  <option key={c.id} value={c.name}>
-                    {c.name}
+                {departmentsList.map((dept) => (
+                  <option key={dept} value={dept}>
+                    {dept}
                   </option>
                 ))}
               </select>
@@ -372,7 +343,7 @@ export function AdminStudentDirectoryTab({
               <th className="py-3.5 pl-6 pr-3">Scholar & ID</th>
               <th className="py-3.5 px-3">Email Address</th>
               <th className="py-3.5 px-3">Institution & Dept</th>
-              <th className="py-3.5 px-3">Year & Cohort</th>
+              <th className="py-3.5 px-3">Academic Year</th>
               <th className="py-3.5 px-3">Reg. Date</th>
               <th className="py-3.5 px-3">Status</th>
               <th className="py-3.5 pl-3 pr-6 text-right">Admin Actions</th>
@@ -405,10 +376,9 @@ export function AdminStudentDirectoryTab({
                     <p className="text-[11px] text-charcoal/60 truncate">{student.department}</p>
                   </td>
 
-                  {/* Year & Cohort */}
+                  {/* Academic Year */}
                   <td className="py-3.5 px-3">
                     <span className="font-semibold text-ink block">{student.academicYear}</span>
-                    <span className="text-[11px] text-charcoal/70 block">{student.groupCategory}</span>
                   </td>
 
                   {/* Registration Date */}
@@ -547,22 +517,11 @@ export function AdminStudentDirectoryTab({
                 <span className="text-[10px] font-bold uppercase text-charcoal/50 block">Department</span>
                 <span className="font-semibold text-ink">{viewingStudent.department}</span>
               </div>
-              <div>
+              <div className="col-span-2">
                 <span className="text-[10px] font-bold uppercase text-charcoal/50 block">Academic Year</span>
                 <span className="font-semibold text-ink">{viewingStudent.academicYear}</span>
               </div>
-              <div>
-                <span className="text-[10px] font-bold uppercase text-charcoal/50 block">Scholar Cohort</span>
-                <span className="font-semibold text-ink">{viewingStudent.groupCategory}</span>
-              </div>
             </div>
-
-            {viewingStudent.bio && (
-              <div className="rounded-xl border border-charcoal/10 bg-white p-3">
-                <span className="text-[10px] font-bold uppercase text-charcoal/50 block mb-1">Scholar Bio</span>
-                <p className="text-charcoal/80 leading-relaxed">{viewingStudent.bio}</p>
-              </div>
-            )}
           </div>
         </Modal>
       )}
@@ -653,9 +612,9 @@ export function AdminStudentDirectoryTab({
                   onChange={(e) => setEditDept(e.target.value)}
                   className="w-full rounded-lg border border-charcoal/25 bg-white p-2.5 text-xs text-ink"
                 >
-                  {departmentsList.map((d) => (
-                    <option key={d.id} value={d.name}>
-                      {d.name}
+                  {departmentsList.map((dept) => (
+                    <option key={dept} value={dept}>
+                      {dept}
                     </option>
                   ))}
                 </select>
@@ -674,23 +633,6 @@ export function AdminStudentDirectoryTab({
                   <option value="2nd Year">2nd Year</option>
                   <option value="3rd Year">3rd Year</option>
                   <option value="4th Year">4th Year</option>
-                </select>
-              </div>
-
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-medium text-charcoal mb-1">
-                  Scholar Cohort Group
-                </label>
-                <select
-                  value={editGroup}
-                  onChange={(e) => setEditGroup(e.target.value)}
-                  className="w-full rounded-lg border border-charcoal/25 bg-white p-2.5 text-xs text-ink"
-                >
-                  {cohortGroupsList.map((c) => (
-                    <option key={c.id} value={c.name}>
-                      {c.name}
-                    </option>
-                  ))}
                 </select>
               </div>
             </div>

@@ -33,7 +33,6 @@ import type {
 import {
   ACADEMIC_YEARS_LIST,
   DEPARTMENTS_LIST,
-  GROUP_CATEGORIES_LIST,
   INSTITUTIONS_LIST,
 } from '../../services/office/mockOfficeData';
 import { officeService } from '../../services/office/officeService';
@@ -88,7 +87,6 @@ export function EventPlanningTab({
   ]);
   const [selectedYears, setSelectedYears] = useState<string[]>(['3rd Year']);
   const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
-  const [selectedGroups, setSelectedGroups] = useState<string[]>(['Tech Cohort 2024']);
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
   const [isStudentPickerOpen, setIsStudentPickerOpen] = useState(false);
   const [studentSearchTerm, setStudentSearchTerm] = useState('');
@@ -110,9 +108,8 @@ export function EventPlanningTab({
   const [analysisRan, setAnalysisRan] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<SmartRecommendationEngineResult | null>(null);
 
-  // Confirmation & Generation
+  // Confirmation
   const [isTimeConfirmed, setIsTimeConfirmed] = useState(false);
-  const [autoGenerateInvitations, setAutoGenerateInvitations] = useState(true);
   const [saving, setSaving] = useState(false);
 
   // When prefilledSlot arrives from Availability Analysis Tab
@@ -128,7 +125,6 @@ export function EventPlanningTab({
         setSelectedInstitutions(prefilledSlot.targetCriteria.institutions || []);
         setSelectedYears(prefilledSlot.targetCriteria.academicYears || []);
         setSelectedDepartments(prefilledSlot.targetCriteria.departments || []);
-        setSelectedGroups(prefilledSlot.targetCriteria.groupCategories || []);
         if (prefilledSlot.targetCriteria.selectedStudentIds) {
           setSelectedStudentIds(prefilledSlot.targetCriteria.selectedStudentIds);
         }
@@ -164,12 +160,9 @@ export function EventPlanningTab({
       if (selectedDepartments.length > 0 && !selectedDepartments.includes(s.department)) {
         return false;
       }
-      if (selectedGroups.length > 0 && !selectedGroups.includes(s.groupCategory)) {
-        return false;
-      }
       return true;
     });
-  }, [students, selectedInstitutions, selectedYears, selectedDepartments, selectedGroups, selectedStudentIds]);
+  }, [students, selectedInstitutions, selectedYears, selectedDepartments, selectedStudentIds]);
 
   // Run availability analysis for the specified audience & scheduling parameters
   const handleAnalyzeAudienceAvailability = async () => {
@@ -184,7 +177,6 @@ export function EventPlanningTab({
         institutions: selectedInstitutions,
         academicYears: selectedYears,
         departments: selectedDepartments,
-        groupCategories: selectedGroups,
         selectedStudentIds: selectedStudentIds.length > 0 ? selectedStudentIds : undefined,
         startDate,
         endDate,
@@ -239,13 +231,6 @@ export function EventPlanningTab({
     setAnalysisRan(false);
   };
 
-  const toggleGrp = (g: string) => {
-    setSelectedGroups((prev) =>
-      prev.includes(g) ? prev.filter((item) => item !== g) : [...prev, g],
-    );
-    setAnalysisRan(false);
-  };
-
   const toggleStudentId = (id: string) => {
     setSelectedStudentIds((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
@@ -253,7 +238,7 @@ export function EventPlanningTab({
     setAnalysisRan(false);
   };
 
-  // Submit Handler: Event creation and invitation generation
+  // Submit Handler: Event creation and session confirmation
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {
@@ -281,7 +266,6 @@ export function EventPlanningTab({
           locationOrLink: locationOrLink.trim(),
           targetInstitutions: selectedInstitutions,
           academicYears: selectedYears,
-          groupCategories: selectedGroups,
           selectedDate,
           selectedTimeSlot,
           slotId,
@@ -292,7 +276,6 @@ export function EventPlanningTab({
           status: 'Confirmed',
         },
         {
-          autoInviteEligible: autoGenerateInvitations,
           selectedStudentIds: selectedStudentIds.length > 0 ? selectedStudentIds : undefined,
           targetDepartments: selectedDepartments,
         },
@@ -300,14 +283,7 @@ export function EventPlanningTab({
 
       onEventCreated(newEvent);
 
-      if (autoGenerateInvitations && newEvent.invitedCount > 0) {
-        onShowToast(
-          `Event "${newEvent.title}" confirmed! Dispatched ${newEvent.invitedCount} invitations to eligible scholars.`,
-          'success',
-        );
-      } else {
-        onShowToast(`Event "${newEvent.title}" planned successfully!`, 'success');
-      }
+      onShowToast(`Event "${newEvent.title}" planned successfully!`, 'success');
 
       setIsCreateModalOpen(false);
       if (onClearPrefilledSlot) onClearPrefilledSlot();
@@ -374,9 +350,7 @@ export function EventPlanningTab({
                     variant={
                       evt.status === 'Confirmed'
                         ? 'success'
-                        : evt.status === 'Invitations Sent'
-                          ? 'gold'
-                          : 'neutral'
+                        : 'neutral'
                     }
                     size="sm"
                   >
@@ -407,7 +381,7 @@ export function EventPlanningTab({
                       Target Capacity
                     </span>
                     <span className="font-bold text-ink">
-                      {evt.acceptedCount}/{evt.requiredParticipants} Filled
+                      {evt.requiredParticipants} Scholars
                     </span>
                   </div>
                 </div>
@@ -419,10 +393,10 @@ export function EventPlanningTab({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => onNavigateTab('invitations')}
+                    onClick={() => onNavigateTab('sessions')}
                     className="text-xs font-semibold"
                   >
-                    Manage RSVPs ({evt.invitedCount})
+                    Manage Session
                   </Button>
                 </div>
               </CardContent>
@@ -446,7 +420,7 @@ export function EventPlanningTab({
               <span>Plan New Maatram Event</span>
             </div>
           }
-          description="Design event details, filter the target audience, analyse schedule overlap, and confirm to dispatch invitations."
+          description="Design event details, filter the target audience, analyse schedule overlap, and confirm the session."
           footer={
             <div className="flex items-center justify-between w-full">
               <Button
@@ -668,31 +642,9 @@ export function EventPlanningTab({
                 </div>
               </div>
 
-              {/* Groups & Individual Student Filter */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-charcoal/10">
-                <div>
-                  <span className="block font-semibold text-charcoal/80 text-[11px] mb-1">
-                    Target Cohort ({selectedGroups.length || 'All Groups'})
-                  </span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {GROUP_CATEGORIES_LIST.map((grp) => (
-                      <button
-                        key={grp}
-                        type="button"
-                        onClick={() => toggleGrp(grp)}
-                        className={`rounded px-2 py-1 text-[11px] font-medium transition-colors ${
-                          selectedGroups.includes(grp)
-                            ? 'bg-ink text-gold font-bold'
-                            : 'bg-offwhite text-charcoal border border-charcoal/20'
-                        }`}
-                      >
-                        {grp}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
+              {/* Individual Student Filter */}
+              <div className="pt-1 border-t border-charcoal/10">
+                <div className="max-w-md">
                   <div className="flex items-center justify-between text-[11px] font-semibold text-charcoal/80 mb-1">
                     <span>Individual Scholar Selection</span>
                     {selectedStudentIds.length > 0 && (
@@ -935,19 +887,6 @@ export function EventPlanningTab({
                     <strong>Confirm Session Timing:</strong> I have reviewed schedule overlap and verified availability for <strong>{selectedDate} ({selectedTimeSlot})</strong>.
                   </span>
                 </label>
-
-                {/* Generate Invitations Checkbox (Requirement 8) */}
-                <label className="flex items-start gap-2.5 p-2.5 rounded-lg bg-emerald-50/60 border border-emerald-200 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={autoGenerateInvitations}
-                    onChange={(e) => setAutoGenerateInvitations(e.target.checked)}
-                    className="mt-0.5 h-4 w-4 rounded border-emerald-400 accent-emerald-600"
-                  />
-                  <span className="text-[11px] leading-tight text-emerald-950">
-                    <strong>Generate Student Invitations:</strong> Automatically dispatch calendar invitations to all <strong>{eligibleStudents.length} eligible scholars</strong> upon session confirmation.
-                  </span>
-                </label>
               </div>
             </div>
           </form>
@@ -960,7 +899,7 @@ export function EventPlanningTab({
           isOpen={isStudentPickerOpen}
           onClose={() => setIsStudentPickerOpen(false)}
           title="Select Target Scholars for Event"
-          description="Limit the event audience and invitations to specific individual scholars"
+          description="Limit the event audience to specific individual scholars"
           footer={
             <div className="flex justify-between w-full">
               <span className="text-xs text-charcoal/70 self-center">

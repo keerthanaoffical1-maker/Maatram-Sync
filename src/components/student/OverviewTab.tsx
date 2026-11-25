@@ -5,7 +5,6 @@ import {
   CheckCircle2,
   Clock,
   ExternalLink,
-  Inbox,
   MapPin,
   Sparkles,
   Users,
@@ -13,7 +12,6 @@ import {
 } from 'lucide-react';
 import type {
   AvailabilitySummary,
-  EventInvitation,
   StudentNotification,
   StudentSession,
   WeeklyAvailability,
@@ -27,23 +25,18 @@ interface OverviewTabProps {
   summary: AvailabilitySummary;
   weeklyAvailability: WeeklyAvailability | null;
   sessions: StudentSession[];
-  invitations: EventInvitation[];
   notifications: StudentNotification[];
   onNavigateTab: (tab: StudentNavTab) => void;
-  onAcceptInvitation?: (id: string) => void;
-  onDeclineInvitation?: (id: string) => void;
 }
 
 export function OverviewTab({
   summary,
   weeklyAvailability,
   sessions,
-  invitations,
   notifications,
   onNavigateTab,
 }: OverviewTabProps) {
   const nextSession = sessions.find((s) => s.status === 'Confirmed') || sessions[0];
-  const pendingInvitations = invitations.filter((i) => i.status === 'Pending');
 
   // Days of current week for the visual strip
   const days = [
@@ -102,8 +95,8 @@ export function OverviewTab({
         </div>
       </div>
 
-      {/* 4 Summary Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* 3 Summary Cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {/* 1. Availability Status */}
         <Card
           variant="interactive"
@@ -139,42 +132,7 @@ export function OverviewTab({
           </CardContent>
         </Card>
 
-        {/* 2. Upcoming Invitations */}
-        <Card
-          variant="interactive"
-          onClick={() => onNavigateTab('invitations')}
-          className="group hover:border-gold transition-all"
-        >
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-charcoal/60">
-                Upcoming Invitations
-              </span>
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gold/15 text-ink group-hover:bg-gold transition-colors">
-                <Inbox className="h-4 w-4" />
-              </span>
-            </div>
-            <div className="mt-4">
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl sm:text-3xl font-extrabold text-ink">
-                  {summary.pendingResponsesCount}
-                </span>
-                <Badge variant={summary.pendingResponsesCount > 0 ? 'warning' : 'neutral'} size="sm">
-                  {summary.pendingResponsesCount > 0 ? 'Action Needed' : 'All Clear'}
-                </Badge>
-              </div>
-              <p className="mt-1.5 text-xs text-charcoal/70">
-                {invitations.length} total invitations received
-              </p>
-            </div>
-            <div className="mt-4 flex items-center gap-1 text-xs font-semibold text-ink group-hover:text-gold transition-colors">
-              <span>View all invitations</span>
-              <ArrowRight className="h-3 w-3" />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* 3. Confirmed Sessions */}
+        {/* 2. Confirmed Sessions */}
         <Card
           variant="interactive"
           onClick={() => onNavigateTab('sessions')}
@@ -209,36 +167,36 @@ export function OverviewTab({
           </CardContent>
         </Card>
 
-        {/* 4. Pending Responses */}
+        {/* 3. Availability Coverage */}
         <Card
           variant="interactive"
-          onClick={() => onNavigateTab('invitations')}
-          className="group hover:border-gold transition-all"
+          onClick={() => onNavigateTab('availability')}
+          className="group hover:border-gold transition-all sm:col-span-2 lg:col-span-1"
         >
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wider text-charcoal/60">
-                Pending Responses
+                Weekly Marked Hours
               </span>
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 text-amber-800 group-hover:bg-amber-200 transition-colors">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gold/15 text-ink group-hover:bg-gold transition-colors">
                 <Clock className="h-4 w-4" />
               </span>
             </div>
             <div className="mt-4">
               <div className="flex items-baseline gap-2">
                 <span className="text-2xl sm:text-3xl font-extrabold text-ink">
-                  {summary.pendingResponsesCount}
+                  {summary.availableHours + summary.unavailableHours}h
                 </span>
                 <Badge variant="gold" size="sm">
-                  Pending
+                  Weekly Plan
                 </Badge>
               </div>
               <p className="mt-1.5 text-xs text-charcoal/70">
-                Response needed for upcoming weekend drives
+                {summary.availableHours}h available • {summary.unavailableHours}h busy
               </p>
             </div>
             <div className="mt-4 flex items-center gap-1 text-xs font-semibold text-ink group-hover:text-gold transition-colors">
-              <span>Respond now</span>
+              <span>Update time slots</span>
               <ArrowRight className="h-3 w-3" />
             </div>
           </CardContent>
@@ -456,19 +414,6 @@ export function OverviewTab({
                 </div>
               </div>
             ))}
-
-            {pendingInvitations.length > 0 && (
-              <div className="pt-2">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => onNavigateTab('invitations')}
-                  className="w-full text-xs font-semibold"
-                >
-                  Review {pendingInvitations.length} Pending Event Invitations
-                </Button>
-              </div>
-            )}
           </CardContent>
         </Card>
       </div>

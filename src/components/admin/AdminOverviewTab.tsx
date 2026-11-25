@@ -5,7 +5,6 @@ import {
   Calendar,
   CheckCircle2,
   FileSpreadsheet,
-  FolderTree,
   GraduationCap,
   History,
   ShieldCheck,
@@ -19,7 +18,6 @@ import type {
   AdminActivityItem,
   AdminOverviewMetrics,
   AdminStudentItem,
-  CategoryGroupItem,
   InstitutionItem,
 } from '../../types/admin';
 import { Badge } from '../ui/Badge';
@@ -31,9 +29,7 @@ interface AdminOverviewTabProps {
   metrics: AdminOverviewMetrics;
   recentStudents: AdminStudentItem[];
   institutions?: InstitutionItem[];
-  categories?: CategoryGroupItem[];
   institutionDistribution?: Array<{ name: string; code: string; count: number; percentage: number }>;
-  categoryDistribution?: Array<{ name: string; count: number; percentage: number }>;
   activities: AdminActivityItem[];
   onNavigateTab: (tab: AdminNavTab) => void;
 }
@@ -42,9 +38,7 @@ export function AdminOverviewTab({
   metrics,
   recentStudents,
   institutions = [],
-  categories = [],
   institutionDistribution: propInstDist,
-  categoryDistribution: propCatDist,
   activities,
   onNavigateTab,
 }: AdminOverviewTabProps) {
@@ -58,17 +52,6 @@ export function AdminOverviewTab({
       percentage: Math.round((inst.registeredStudentCount / total) * 100),
     }));
   }, [propInstDist, institutions, metrics.totalRegisteredStudents]);
-
-  const categoryDistribution = useMemo(() => {
-    if (propCatDist) return propCatDist;
-    const total = metrics.totalRegisteredStudents || 1;
-    const cohorts = categories.filter((c) => c.type === 'cohortGroup');
-    return cohorts.map((cat) => ({
-      name: cat.name,
-      count: cat.studentCount,
-      percentage: Math.round((cat.studentCount / total) * 100),
-    }));
-  }, [propCatDist, categories, metrics.totalRegisteredStudents]);
   return (
     <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
       {/* Top Hero Banner */}
@@ -84,7 +67,7 @@ export function AdminOverviewTab({
               Academic Infrastructure & Scholar Records
             </h2>
             <p className="text-sm leading-relaxed text-white/75 sm:text-base">
-              Register new scholars, manage institutional affiliations, maintain academic taxonomies, and audit system activities.
+              Register new scholars, manage institutional affiliations, monitor student availability, and audit system activities.
             </p>
           </div>
 
@@ -300,44 +283,63 @@ export function AdminOverviewTab({
           </CardContent>
         </Card>
 
-        {/* Student Category Distribution */}
+        {/* Platform Governance & Operational Status */}
         <Card>
           <CardHeader
             title={
               <div className="flex items-center gap-2">
-                <FolderTree className="h-4 w-4 text-gold" />
-                <span>Scholar Cohort Distribution</span>
+                <ShieldCheck className="h-4 w-4 text-gold" />
+                <span>Governance & Platform Health</span>
               </div>
             }
-            subtitle="Enrollment breakdown across specialized learning circles"
+            subtitle="System registration metrics and active account coverage"
             action={
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => onNavigateTab('categories')}
+                onClick={() => onNavigateTab('students')}
                 className="text-xs"
               >
-                Manage Groups
+                View Directory
               </Button>
             }
           />
-          <CardContent className="space-y-3.5">
-            {categoryDistribution.map((cat) => (
-              <div key={cat.name} className="space-y-1.5 text-xs">
-                <div className="flex items-center justify-between text-charcoal font-semibold">
-                  <span>{cat.name}</span>
-                  <span className="font-mono text-ink">
-                    {cat.count} scholars ({cat.percentage}%)
-                  </span>
-                </div>
-                <div className="h-2.5 w-full rounded-full bg-charcoal/10 overflow-hidden">
-                  <div
-                    className="h-full bg-charcoal transition-all duration-300"
-                    style={{ width: `${cat.percentage}%` }}
-                  />
-                </div>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-xl border border-charcoal/10 bg-offwhite/50 p-3.5">
+                <span className="text-[10px] uppercase font-bold text-charcoal/60 block">
+                  Active Scholar Ratio
+                </span>
+                <span className="text-xl font-extrabold text-ink mt-1 block">
+                  {Math.round((metrics.activeStudents / (metrics.totalRegisteredStudents || 1)) * 100)}%
+                </span>
+                <span className="text-[11px] text-charcoal/60">
+                  {metrics.activeStudents} of {metrics.totalRegisteredStudents} active
+                </span>
               </div>
-            ))}
+
+              <div className="rounded-xl border border-charcoal/10 bg-offwhite/50 p-3.5">
+                <span className="text-[10px] uppercase font-bold text-charcoal/60 block">
+                  Partner Colleges
+                </span>
+                <span className="text-xl font-extrabold text-ink mt-1 block">
+                  {metrics.totalInstitutions}
+                </span>
+                <span className="text-[11px] text-charcoal/60">
+                  Engineering colleges
+                </span>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-charcoal/10 bg-white p-3.5 flex items-center justify-between">
+              <div>
+                <span className="text-xs font-bold text-ink block">Database Synchronization</span>
+                <span className="text-[11px] text-charcoal/70">Supabase live records verified and active</span>
+              </div>
+              <Badge variant="success" size="sm" dot>
+                Synchronized
+              </Badge>
+            </div>
           </CardContent>
         </Card>
       </div>

@@ -6,7 +6,6 @@ import type {
   AdminOverviewMetrics,
   AdminStudentItem,
   AdminUser,
-  CategoryGroupItem,
   InstitutionItem,
 } from '../../types/admin';
 import {
@@ -21,7 +20,6 @@ import { AdminOverviewTab } from './AdminOverviewTab';
 import { AdminSidebar, type AdminNavTab } from './AdminSidebar';
 import { AdminStudentDirectoryTab } from './AdminStudentDirectoryTab';
 import { AdminTopNavbar } from './AdminTopNavbar';
-import { CategoryManagementTab } from './CategoryManagementTab';
 import { InstitutionManagementTab } from './InstitutionManagementTab';
 import { StudentRegistrationTab } from './StudentRegistrationTab';
 
@@ -39,7 +37,6 @@ export function AdminLayout({ initialTab = 'overview' }: AdminLayoutProps) {
   const [metrics, setMetrics] = useState<AdminOverviewMetrics>(INITIAL_ADMIN_METRICS);
   const [students, setStudents] = useState<AdminStudentItem[]>([]);
   const [institutions, setInstitutions] = useState<InstitutionItem[]>([]);
-  const [categories, setCategories] = useState<CategoryGroupItem[]>([]);
   const [activities, setActivities] = useState<AdminActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -73,18 +70,16 @@ export function AdminLayout({ initialTab = 'overview' }: AdminLayoutProps) {
   // Initial Data Fetch
   const loadAdminData = async () => {
     try {
-      const [metricsData, studentsData, instData, catData, actData] = await Promise.all([
+      const [metricsData, studentsData, instData, actData] = await Promise.all([
         adminService.getOverviewMetrics(),
         adminService.getStudents(),
         adminService.getInstitutions(),
-        adminService.getCategories(),
         adminService.getRecentActivities(),
       ]);
 
       setMetrics(metricsData);
       setStudents(studentsData);
       setInstitutions(instData);
-      setCategories(catData);
       setActivities(actData);
     } catch {
       addToast('Could not load complete Admin data', 'error');
@@ -113,16 +108,14 @@ export function AdminLayout({ initialTab = 'overview' }: AdminLayoutProps) {
   // Refresh helper
   const refreshMetricsAndActivities = async () => {
     try {
-      const [m, a, inst, cat] = await Promise.all([
+      const [m, a, inst] = await Promise.all([
         adminService.getOverviewMetrics(),
         adminService.getRecentActivities(),
         adminService.getInstitutions(),
-        adminService.getCategories(),
       ]);
       setMetrics(m);
       setActivities(a);
       setInstitutions(inst);
-      setCategories(cat);
     } catch {
       // ignore
     }
@@ -161,19 +154,6 @@ export function AdminLayout({ initialTab = 'overview' }: AdminLayoutProps) {
 
   const handleInstitutionDeleted = (deletedId: string) => {
     setInstitutions((prev) => prev.filter((i) => i.id !== deletedId));
-    refreshMetricsAndActivities();
-  };
-
-  // Category updates
-  const handleCategoryAdded = (newCat: CategoryGroupItem) => {
-    setCategories((prev) => [...prev, newCat]);
-    refreshMetricsAndActivities();
-  };
-
-  const handleCategoryUpdated = (updatedCat: CategoryGroupItem) => {
-    setCategories((prev) =>
-      prev.map((c) => (c.id === updatedCat.id ? updatedCat : c)),
-    );
     refreshMetricsAndActivities();
   };
 
@@ -219,7 +199,6 @@ export function AdminLayout({ initialTab = 'overview' }: AdminLayoutProps) {
                   metrics={metrics}
                   recentStudents={students.slice(0, 5)}
                   institutions={institutions}
-                  categories={categories}
                   activities={activities}
                   onNavigateTab={handleSelectTab}
                 />
@@ -229,7 +208,6 @@ export function AdminLayout({ initialTab = 'overview' }: AdminLayoutProps) {
               {activeTab === 'registration' && (
                 <StudentRegistrationTab
                   institutions={institutions}
-                  categories={categories}
                   onStudentRegistered={handleStudentCreated}
                   onBulkImportCompleted={(count) => {
                     handleStudentsBulkImported([]);
@@ -245,7 +223,6 @@ export function AdminLayout({ initialTab = 'overview' }: AdminLayoutProps) {
                 <AdminStudentDirectoryTab
                   students={students}
                   institutions={institutions}
-                  categories={categories}
                   initialSearchQuery={searchQuery}
                   onStudentUpdated={handleStudentUpdated}
                   onShowToast={addToast}
@@ -264,17 +241,7 @@ export function AdminLayout({ initialTab = 'overview' }: AdminLayoutProps) {
                 />
               )}
 
-              {/* Tab 5: Categories & Groups */}
-              {activeTab === 'categories' && (
-                <CategoryManagementTab
-                  categories={categories}
-                  onCategoryAdded={handleCategoryAdded}
-                  onCategoryUpdated={handleCategoryUpdated}
-                  onShowToast={addToast}
-                />
-              )}
-
-              {/* Tab 6: Admin Activity Log */}
+              {/* Tab 5: Admin Activity Log */}
               {activeTab === 'activity' && (
                 <AdminActivityLogTab logs={activities} />
               )}

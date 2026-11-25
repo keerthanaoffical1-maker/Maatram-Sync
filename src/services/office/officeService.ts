@@ -11,13 +11,11 @@ import type {
   RecommendationCard,
   SmartRecommendationEngineResult,
   StudentDirectoryItem,
-  StudentInvitationRecord,
   TimeSlotAnalysisResult,
 } from '../../types/office';
 import {
   INITIAL_OFFICE_ACTIVITIES,
   INITIAL_OFFICE_EVENTS,
-  INITIAL_OFFICE_INVITATIONS,
   INITIAL_OFFICE_METRICS,
   INITIAL_STUDENTS_DIRECTORY,
 } from './mockOfficeData';
@@ -26,7 +24,6 @@ const wait = (ms = 150) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const STORAGE_KEYS = {
   OFFICE_EVENTS: 'maatram.office.events',
-  OFFICE_INVITATIONS: 'maatram.office.invitations',
   OFFICE_ACTIVITIES: 'maatram.office.activities',
 };
 
@@ -50,12 +47,10 @@ function saveStored<T>(key: string, data: T): void {
 class OfficeService {
   private students: StudentDirectoryItem[] = INITIAL_STUDENTS_DIRECTORY;
   private events: EventPlan[];
-  private invitations: StudentInvitationRecord[];
   private activities: OfficeActivityLog[];
 
   constructor() {
     this.events = loadStored(STORAGE_KEYS.OFFICE_EVENTS, INITIAL_OFFICE_EVENTS);
-    this.invitations = loadStored(STORAGE_KEYS.OFFICE_INVITATIONS, INITIAL_OFFICE_INVITATIONS);
     this.activities = loadStored(STORAGE_KEYS.OFFICE_ACTIVITIES, INITIAL_OFFICE_ACTIVITIES);
   }
 
@@ -65,7 +60,6 @@ class OfficeService {
   async getOverviewMetrics(): Promise<OfficeOverviewMetrics> {
     const students = await this.getStudents();
     const events = await this.getEvents();
-    const invitations = await this.getInvitations();
 
     const activeStudents = students.filter(
       (s) => s.enrollmentStatus === 'Active',
@@ -73,14 +67,11 @@ class OfficeService {
     const upcomingEvents = events.filter(
       (e) => e.status !== 'Cancelled' && e.status !== 'Completed',
     ).length;
-    const pendingInvitations = invitations.filter((i) => i.status === 'Pending').length;
 
     return {
       totalRegisteredStudents: students.length,
       activeStudents,
       upcomingEvents,
-      pendingInvitations,
-      overallRsvpRate: 89,
       averageAvailabilityRate: 78,
     };
   }
@@ -96,7 +87,6 @@ class OfficeService {
     search?: string;
     institution?: string;
     academicYear?: string;
-    groupCategory?: string;
     department?: string;
     availabilityStatus?: string;
   }): Promise<StudentDirectoryItem[]> {
@@ -114,19 +104,13 @@ class OfficeService {
             department,
             student_id,
             account_status,
-            skills,
-            bio,
-            linkedin_url,
-            github_url,
-            institutions (institution_name),
-            student_groups (group_name)
+            institutions (institution_name)
           `)
           .eq('role', 'student');
 
         if (!error && data && data.length > 0) {
           this.students = data.map((d: any, index: number) => {
             const instName = d.institutions?.institution_name || 'Anna University';
-            const groupName = d.student_groups?.group_name || 'Tech Cohort 2024';
             const isActive = d.account_status === 'Active';
 
             // Find matching initial student slots if available
@@ -143,17 +127,11 @@ class OfficeService {
               institution: instName,
               department: d.department || 'Computer Science & Engineering',
               academicYear: d.academic_year || '3rd Year',
-              groupCategory: groupName,
               studentId: d.student_id || `MS-2024-${String(index + 1).padStart(3, '0')}`,
               enrollmentStatus: isActive ? 'Active' : 'On Leave',
               availabilityStatus: 'Full Weekend Available',
-              skills: d.skills && d.skills.length > 0 ? d.skills : ['Python', 'Data Structures', 'SQL'],
               location: 'Tamil Nadu, India',
-              bio: d.bio || 'Maatram Foundation Scholar dedicated to tech excellence.',
-              linkedinUrl: d.linkedin_url || '',
-              githubUrl: d.github_url || '',
               sessionsAttended: 12,
-              rsvpRate: 94,
               lastActive: 'Today',
               weeklySlots,
             };
@@ -184,10 +162,6 @@ class OfficeService {
 
     if (filters.academicYear && filters.academicYear !== 'All') {
       result = result.filter((s) => s.academicYear === filters.academicYear);
-    }
-
-    if (filters.groupCategory && filters.groupCategory !== 'All') {
-      result = result.filter((s) => s.groupCategory === filters.groupCategory);
     }
 
     if (filters.department && filters.department !== 'All') {
@@ -297,7 +271,6 @@ class OfficeService {
               locationOrLink: ev.location || ev.meeting_url || '',
               targetInstitutions: ev.target_institutions || [],
               academicYears: ev.target_academic_years || ['3rd Year', '4th Year'],
-              groupCategories: ev.target_groups || ['Tech Cohort 2024'],
               selectedDate: ev.start_datetime.split('T')[0],
               selectedTimeSlot: timeStr,
               slotId: '09:00',
@@ -311,10 +284,6 @@ class OfficeService {
                     : ev.status === 'Scheduled' || ev.status === 'In Progress'
                       ? 'Confirmed'
                       : 'Planned',
-              invitedCount: 0,
-              acceptedCount: 0,
-              declinedCount: 0,
-              pendingCount: 0,
               createdAt: ev.created_at,
             };
           });
@@ -330,46 +299,21 @@ class OfficeService {
     return [...this.events];
   }
 
-  /**
-   * Creates an event.
-   * Requirement 8:
-   * Only confirmed events should generate invitations for eligible selected students.
-   */
   async createEvent(
-    eventData: Omit<
-      EventPlan,
-      'id' | 'createdAt' | 'invitedCount' | 'acceptedCount' | 'declinedCount' | 'pendingCount'
-    >,
+    eventData: Omit<EventPlan, 'id' | 'createdAt'>,
     options?: {
-      autoInviteEligible?: boolean;
       selectedStudentIds?: string[];
       targetDepartments?: string[];
     },
   ): Promise<EventPlan> {
-    const isConfirmed = eventData.status === 'Confirmed' || eventData.status === 'Invitations Sent';
+    const isConfirmed = eventData.status === 'Confirmed';
 
     const newEvent: EventPlan = {
       ...eventData,
       id: `evt-${Date.now().toString(36)}`,
       createdAt: new Date().toISOString(),
-      invitedCount: 0,
-      acceptedCount: 0,
-      declinedCount: 0,
-      pendingCount: 0,
       status: eventData.status,
     };
-
-    // Calculate eligible students matching target audience
-    const allStudents = await this.getStudents();
-    const eligibleStudents = filterAudienceStudents(allStudents, {
-      institutions: eventData.targetInstitutions || [],
-      academicYears: eventData.academicYears || [],
-      departments: options?.targetDepartments || [],
-      groupCategories: eventData.groupCategories || [],
-      selectedStudentIds: options?.selectedStudentIds,
-      startDate: eventData.selectedDate,
-      endDate: eventData.selectedDate,
-    });
 
     if (isSupabaseConfigured) {
       try {
@@ -391,7 +335,6 @@ class OfficeService {
             end_datetime: endIso,
             target_institutions: eventData.targetInstitutions,
             target_academic_years: eventData.academicYears,
-            target_groups: eventData.groupCategories,
             required_participants: eventData.requiredParticipants,
             mentor_name: eventData.mentorOrHost,
             meeting_url: eventData.mode === 'Online' ? eventData.locationOrLink : null,
@@ -409,62 +352,11 @@ class OfficeService {
       }
     }
 
-    // Requirement 8: Only confirmed events should generate invitations
-    if (isConfirmed && eligibleStudents.length > 0 && options?.autoInviteEligible !== false) {
-      if (isSupabaseConfigured) {
-        try {
-          const rows = eligibleStudents.map((s) => ({
-            event_id: newEvent.id,
-            student_id: s.id,
-            response_status: 'Pending' as const,
-          }));
-          await supabase
-            .from('event_invitations')
-            .upsert(rows, { onConflict: 'event_id,student_id' });
-        } catch (err) {
-          console.warn('Supabase auto-invite error:', err);
-        }
-      }
-
-      // Generate local invitation records
-      const newInvitations: StudentInvitationRecord[] = eligibleStudents.map((s, idx) => ({
-        id: `inv-${Date.now()}-${idx}`,
-        eventId: newEvent.id,
-        eventName: newEvent.title,
-        studentId: s.id,
-        studentName: s.name,
-        studentEmail: s.email,
-        institution: s.institution,
-        academicYear: s.academicYear,
-        groupCategory: s.groupCategory,
-        status: 'Pending',
-        sentAt: new Date().toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-        }),
-      }));
-
-      this.invitations = [...newInvitations, ...this.invitations];
-      saveStored(STORAGE_KEYS.OFFICE_INVITATIONS, this.invitations);
-
-      newEvent.invitedCount = eligibleStudents.length;
-      newEvent.pendingCount = eligibleStudents.length;
-      newEvent.status = 'Invitations Sent';
-
-      this.logActivity({
-        action: 'Event Confirmed & Invitations Dispatched',
-        details: `Created event "${newEvent.title}" and automatically dispatched ${eligibleStudents.length} invitations for confirmed slot ${newEvent.selectedDate} (${newEvent.selectedTimeSlot}).`,
-        type: 'event',
-      });
-    } else {
-      this.logActivity({
-        action: isConfirmed ? 'Event Confirmed' : 'Event Draft Created',
-        details: `Created ${isConfirmed ? 'confirmed' : 'draft'} event "${newEvent.title}" for ${newEvent.selectedDate}.`,
-        type: 'event',
-      });
-    }
+    this.logActivity({
+      action: isConfirmed ? 'Event Confirmed' : 'Event Draft Created',
+      details: `Created ${isConfirmed ? 'confirmed' : 'draft'} event "${newEvent.title}" for ${newEvent.selectedDate}.`,
+      type: 'event',
+    });
 
     this.events = [newEvent, ...this.events];
     saveStored(STORAGE_KEYS.OFFICE_EVENTS, this.events);
@@ -527,91 +419,6 @@ class OfficeService {
       details: `Cancelled event "${target.title}".`,
       type: 'event',
     });
-  }
-
-  // ==========================================
-  // Invitations & Tracking
-  // ==========================================
-  async getInvitations(eventId?: string): Promise<StudentInvitationRecord[]> {
-    if (eventId && eventId !== 'all') {
-      return this.invitations.filter((i) => i.eventId === eventId);
-    }
-    return [...this.invitations];
-  }
-
-  async sendBatchInvitations(
-    eventId: string,
-    studentIds: string[],
-  ): Promise<{ count: number; event: EventPlan }> {
-    const event = this.events.find((e) => e.id === eventId);
-    if (!event) throw new Error('Event not found');
-
-    const allStudents = await this.getStudents();
-    const targetStudents = allStudents.filter((s) => studentIds.includes(s.id));
-
-    if (isSupabaseConfigured) {
-      try {
-        const rows = targetStudents.map((s) => ({
-          event_id: event.id,
-          student_id: s.id,
-          response_status: 'Pending' as const,
-        }));
-        await supabase
-          .from('event_invitations')
-          .upsert(rows, { onConflict: 'event_id,student_id' });
-      } catch (err) {
-        console.warn('Supabase sendBatchInvitations error, saved locally:', err);
-      }
-    }
-
-    const newRecords: StudentInvitationRecord[] = targetStudents.map((s, idx) => ({
-      id: `inv-${Date.now()}-${idx}`,
-      eventId: event.id,
-      eventName: event.title,
-      studentId: s.id,
-      studentName: s.name,
-      studentEmail: s.email,
-      institution: s.institution,
-      academicYear: s.academicYear,
-      groupCategory: s.groupCategory,
-      status: 'Pending',
-      sentAt: new Date().toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      }),
-    }));
-
-    this.invitations = [...newRecords, ...this.invitations];
-    saveStored(STORAGE_KEYS.OFFICE_INVITATIONS, this.invitations);
-
-    event.invitedCount += targetStudents.length;
-    event.pendingCount += targetStudents.length;
-    event.status = 'Invitations Sent';
-    saveStored(STORAGE_KEYS.OFFICE_EVENTS, this.events);
-
-    this.logActivity({
-      action: 'Batch Invitations Sent',
-      details: `Dispatched ${targetStudents.length} invitations for "${event.title}".`,
-      type: 'invitation',
-    });
-
-    return { count: targetStudents.length, event };
-  }
-
-  async resendInvitation(invitationId: string): Promise<void> {
-    await wait(80);
-    const inv = this.invitations.find((i) => i.id === invitationId);
-    if (inv) {
-      inv.sentAt = 'Just now (Resent)';
-      saveStored(STORAGE_KEYS.OFFICE_INVITATIONS, this.invitations);
-      this.logActivity({
-        action: 'Reminder Dispatched',
-        details: `Sent invitation reminder to ${inv.studentName} for "${inv.eventName}".`,
-        type: 'invitation',
-      });
-    }
   }
 
   // ==========================================

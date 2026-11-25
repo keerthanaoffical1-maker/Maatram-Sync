@@ -66,7 +66,7 @@ export function TopNavbar({
 
         <div>
           <h1 className="text-lg font-bold tracking-tight text-ink sm:text-xl lg:text-2xl">
-            Welcome back, {profile.preferredName || profile.name.split(' ')[0]}
+            Welcome back, {profile.name.split(' ')[0]}
           </h1>
           <div className="flex items-center gap-2 text-xs text-charcoal/65 sm:text-sm">
             <Calendar className="h-3.5 w-3.5 text-gold shrink-0" aria-hidden="true" />
@@ -105,7 +105,7 @@ export function TopNavbar({
             <div className="hidden text-left md:block">
               <p className="text-xs font-bold text-ink leading-tight">{profile.name}</p>
               <p className="text-[11px] text-charcoal/60 truncate max-w-[130px]">
-                {profile.groupCategory.split(' - ')[1] || 'Scholar'}
+                {profile.academicYear.split(' (')[0] || 'Scholar'}
               </p>
             </div>
 

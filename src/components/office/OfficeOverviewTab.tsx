@@ -7,8 +7,6 @@ import {
   CheckCircle2,
   Clock,
   ExternalLink,
-  Inbox,
-  MailCheck,
   MapPin,
   Sparkles,
   TrendingUp,
@@ -52,7 +50,7 @@ export function OfficeOverviewTab({
               Optimize Event Timings with Synchronized Availability
             </h2>
             <p className="text-sm leading-relaxed text-white/75 sm:text-base">
-              Identify maximum student schedule overlap across partner colleges, schedule high-impact workshops, and manage invitations effortlessly.
+              Identify maximum student schedule overlap across partner colleges, schedule high-impact workshops, and confirm sessions effortlessly.
             </p>
           </div>
 
@@ -187,36 +185,36 @@ export function OfficeOverviewTab({
           </CardContent>
         </Card>
 
-        {/* 4. Pending Invitations */}
+        {/* 4. Average Availability Rate */}
         <Card
           variant="interactive"
-          onClick={() => onNavigateTab('invitations')}
+          onClick={() => onNavigateTab('analysis')}
           className="group hover:border-gold transition-all"
         >
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wider text-charcoal/60">
-                Pending Invitations
+                Average Availability Rate
               </span>
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 text-amber-800 group-hover:bg-amber-200 transition-colors">
-                <Clock className="h-4 w-4" />
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gold/15 text-ink group-hover:bg-gold transition-colors">
+                <TrendingUp className="h-4 w-4" />
               </span>
             </div>
             <div className="mt-4">
               <div className="flex items-baseline gap-2">
                 <span className="text-2xl sm:text-3xl font-extrabold text-ink">
-                  {metrics.pendingInvitations}
+                  {metrics.averageAvailabilityRate}%
                 </span>
-                <Badge variant="warning" size="sm">
-                  Awaiting RSVP
+                <Badge variant="gold" size="sm">
+                  Optimal Window
                 </Badge>
               </div>
               <p className="mt-1.5 text-xs text-charcoal/70">
-                {metrics.overallRsvpRate}% overall RSVP compliance
+                Average student availability across active weekly schedules
               </p>
             </div>
             <div className="mt-4 flex items-center gap-1 text-xs font-semibold text-ink group-hover:text-gold transition-colors">
-              <span>Track responses</span>
+              <span>Run overlap analysis</span>
               <ArrowRight className="h-3 w-3" />
             </div>
           </CardContent>
@@ -274,7 +272,7 @@ export function OfficeOverviewTab({
               </div>
               <p className="text-base font-extrabold text-ink">Saturday • 02:00 PM – 04:00 PM</p>
               <p className="text-xs text-charcoal/75 leading-relaxed">
-                Ideal for 1-on-1 mentor sessions and mock technical interviews. Strong attendance across tech cohorts.
+                Ideal for 1-on-1 mentor sessions and mock technical interviews. Strong attendance across engineering scholars.
               </p>
             </div>
 
@@ -354,8 +352,8 @@ export function OfficeOverviewTab({
                   <span className="text-charcoal/70">
                     Host: <strong className="text-ink">{session.mentorOrHost}</strong>
                   </span>
-                  <span className="font-semibold text-emerald-800">
-                    {session.acceptedCount} confirmed scholars
+                  <span className="font-semibold text-charcoal">
+                    Capacity: {session.requiredParticipants} scholars
                   </span>
                 </div>
               </div>

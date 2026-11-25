@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import type {
   AvailabilitySummary,
-  EventInvitation,
   StudentNotification,
   StudentProfile,
   StudentSession,
@@ -15,7 +14,6 @@ import { getMonday, toISODateString } from '../../lib/utils';
 import { authService } from '../../services/auth';
 import { ToastContainer } from '../ui/Toast';
 import { AvailabilityTab } from './AvailabilityTab';
-import { InvitationsTab } from './InvitationsTab';
 import { OverviewTab } from './OverviewTab';
 import { ProfileTab } from './ProfileTab';
 import { SessionsTab } from './SessionsTab';
@@ -38,12 +36,9 @@ export function StudentLayout({ initialTab = 'overview' }: StudentLayoutProps) {
     totalSlotsMarked: 18,
     availableHours: 11,
     unavailableHours: 7,
-    upcomingInvitationsCount: 4,
     confirmedSessionsCount: 3,
-    pendingResponsesCount: 2,
   });
   const [weeklyAvailability, setWeeklyAvailability] = useState<WeeklyAvailability | null>(null);
-  const [invitations, setInvitations] = useState<EventInvitation[]>([]);
   const [sessions, setSessions] = useState<StudentSession[]>([]);
   const [notifications, setNotifications] = useState<StudentNotification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -66,11 +61,10 @@ export function StudentLayout({ initialTab = 'overview' }: StudentLayoutProps) {
   const loadDashboardData = async () => {
     try {
       const currentMondayStr = toISODateString(getMonday(new Date()));
-      const [profData, sumData, availData, invData, sessData, notifData] = await Promise.all([
+      const [profData, sumData, availData, sessData, notifData] = await Promise.all([
         studentService.getProfile(),
         studentService.getAvailabilitySummary(currentMondayStr),
         studentService.getWeeklyAvailability(currentMondayStr),
-        studentService.getInvitations(),
         studentService.getUpcomingSessions(),
         studentService.getNotifications(),
       ]);
@@ -78,7 +72,6 @@ export function StudentLayout({ initialTab = 'overview' }: StudentLayoutProps) {
       setProfile(profData);
       setSummary(sumData);
       setWeeklyAvailability(availData);
-      setInvitations(invData);
       setSessions(sessData);
       setNotifications(notifData);
     } catch (err) {
@@ -96,24 +89,6 @@ export function StudentLayout({ initialTab = 'overview' }: StudentLayoutProps) {
   const handleUpdateProfile = async (updates: Partial<StudentProfile>) => {
     const updated = await studentService.updateProfile(updates);
     setProfile(updated);
-  };
-
-  // Respond to Invitation (Accept / Decline) with immediate reactive state update
-  const handleRespondInvitation = async (id: string, status: 'Accepted' | 'Declined') => {
-    const res = await studentService.respondToInvitation(id, status);
-
-    // Update local invitations immediately
-    setInvitations((prev) => prev.map((inv) => (inv.id === id ? res.invitation : inv)));
-
-    // If accepted and created a session, add to sessions
-    if (res.newSession) {
-      setSessions((prev) => [res.newSession!, ...prev]);
-    }
-
-    // Refresh summary counts
-    const currentMondayStr = toISODateString(getMonday(new Date()));
-    const updatedSummary = await studentService.getAvailabilitySummary(currentMondayStr);
-    setSummary(updatedSummary);
   };
 
   // Notification actions
@@ -137,8 +112,6 @@ export function StudentLayout({ initialTab = 'overview' }: StudentLayoutProps) {
     }
   };
 
-  const pendingInvitationsCount = invitations.filter((i) => i.status === 'Pending').length;
-
   return (
     <div className="min-h-screen bg-offwhite text-ink font-sans antialiased">
       {/* Fixed Left Sidebar for Desktop & Mobile Drawer */}
@@ -146,7 +119,6 @@ export function StudentLayout({ initialTab = 'overview' }: StudentLayoutProps) {
         activeTab={activeTab}
         onSelectTab={(tab) => setActiveTab(tab)}
         onLogout={handleLogout}
-        pendingInvitationsCount={pendingInvitationsCount}
         isMobileOpen={isMobileMenuOpen}
         onCloseMobile={() => setIsMobileMenuOpen(false)}
       />
@@ -180,11 +152,8 @@ export function StudentLayout({ initialTab = 'overview' }: StudentLayoutProps) {
                   summary={summary}
                   weeklyAvailability={weeklyAvailability}
                   sessions={sessions}
-                  invitations={invitations}
                   notifications={notifications}
                   onNavigateTab={(tab) => setActiveTab(tab)}
-                  onAcceptInvitation={(id) => handleRespondInvitation(id, 'Accepted')}
-                  onDeclineInvitation={(id) => handleRespondInvitation(id, 'Declined')}
                 />
               )}
 
@@ -198,15 +167,6 @@ export function StudentLayout({ initialTab = 'overview' }: StudentLayoutProps) {
                     setSummary(sum);
                     setWeeklyAvailability(avail);
                   }}
-                />
-              )}
-
-              {activeTab === 'invitations' && (
-                <InvitationsTab
-                  invitations={invitations}
-                  onRespond={handleRespondInvitation}
-                  onShowToast={addToast}
-                  onNavigateTab={(tab) => setActiveTab(tab)}
                 />
               )}
 

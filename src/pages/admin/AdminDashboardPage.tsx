@@ -9,7 +9,6 @@ export default function AdminDashboardPage() {
     'registration',
     'students',
     'institutions',
-    'categories',
     'activity',
   ];
 

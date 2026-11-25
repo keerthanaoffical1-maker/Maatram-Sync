@@ -22,7 +22,6 @@ import {
 import type { StudentDirectoryItem } from '../../types/office';
 import {
   ACADEMIC_YEARS_LIST,
-  GROUP_CATEGORIES_LIST,
   INSTITUTIONS_LIST,
 } from '../../services/office/mockOfficeData';
 import { Badge } from '../ui/Badge';
@@ -43,9 +42,8 @@ export function StudentDirectoryTab({
   const [search, setSearch] = useState(initialSearchQuery);
   const [selectedInstitution, setSelectedInstitution] = useState<string>('All');
   const [selectedYear, setSelectedYear] = useState<string>('All');
-  const [selectedGroup, setSelectedGroup] = useState<string>('All');
   const [selectedAvailability, setSelectedAvailability] = useState<string>('All');
-  const [sortBy, setSortBy] = useState<'name' | 'year' | 'rsvp' | 'sessions'>('name');
+  const [sortBy, setSortBy] = useState<'name' | 'year' | 'sessions'>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   // Selected student for detail modal
@@ -74,11 +72,6 @@ export function StudentDirectoryTab({
         return false;
       }
 
-      // Group Category filter
-      if (selectedGroup !== 'All' && s.groupCategory !== selectedGroup) {
-        return false;
-      }
-
       // Availability Status filter
       if (selectedAvailability !== 'All' && s.availabilityStatus !== selectedAvailability) {
         return false;
@@ -86,7 +79,7 @@ export function StudentDirectoryTab({
 
       return true;
     });
-  }, [students, search, selectedInstitution, selectedYear, selectedGroup, selectedAvailability]);
+  }, [students, search, selectedInstitution, selectedYear, selectedAvailability]);
 
   // Sort application
   const sortedStudents = useMemo(() => {
@@ -98,9 +91,6 @@ export function StudentDirectoryTab({
       if (sortBy === 'year') {
         const res = a.academicYear.localeCompare(b.academicYear);
         return sortOrder === 'asc' ? res : -res;
-      }
-      if (sortBy === 'rsvp') {
-        return sortOrder === 'asc' ? a.rsvpRate - b.rsvpRate : b.rsvpRate - a.rsvpRate;
       }
       if (sortBy === 'sessions') {
         return sortOrder === 'asc'
@@ -114,7 +104,6 @@ export function StudentDirectoryTab({
   const activeFiltersCount =
     (selectedInstitution !== 'All' ? 1 : 0) +
     (selectedYear !== 'All' ? 1 : 0) +
-    (selectedGroup !== 'All' ? 1 : 0) +
     (selectedAvailability !== 'All' ? 1 : 0) +
     (search.trim() ? 1 : 0);
 
@@ -122,7 +111,6 @@ export function StudentDirectoryTab({
     setSearch('');
     setSelectedInstitution('All');
     setSelectedYear('All');
-    setSelectedGroup('All');
     setSelectedAvailability('All');
   };
 
@@ -203,7 +191,7 @@ export function StudentDirectoryTab({
           </div>
 
           {/* Bottom row: Dropdown filters */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2 border-t border-charcoal/10">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-charcoal/10">
             {/* Institution Filter */}
             <div>
               <label className="block text-[11px] font-bold text-charcoal/70 mb-1">
@@ -242,25 +230,6 @@ export function StudentDirectoryTab({
               </select>
             </div>
 
-            {/* Group/Category Filter */}
-            <div>
-              <label className="block text-[11px] font-bold text-charcoal/70 mb-1">
-                Scholar Cohort
-              </label>
-              <select
-                value={selectedGroup}
-                onChange={(e) => setSelectedGroup(e.target.value)}
-                className="w-full rounded-lg border border-charcoal/20 bg-offwhite/50 px-3 py-2 text-xs text-ink focus:bg-white focus:border-ink focus:outline-none focus:ring-1 focus:ring-gold"
-              >
-                <option value="All">All Cohorts</option>
-                {GROUP_CATEGORIES_LIST.map((group) => (
-                  <option key={group} value={group}>
-                    {group}
-                  </option>
-                ))}
-              </select>
-            </div>
-
             {/* Availability Status Filter */}
             <div>
               <label className="block text-[11px] font-bold text-charcoal/70 mb-1">
@@ -290,7 +259,7 @@ export function StudentDirectoryTab({
             <tr className="border-b border-charcoal/15 bg-offwhite/80 text-[11px] font-extrabold uppercase tracking-wider text-charcoal/70">
               <th className="py-3.5 pl-6 pr-3">Scholar</th>
               <th className="py-3.5 px-3">Institution & Dept</th>
-              <th className="py-3.5 px-3">Year & Cohort</th>
+              <th className="py-3.5 px-3">Academic Year</th>
               <th className="py-3.5 px-3">Availability Status</th>
               <th className="py-3.5 px-3">Contact</th>
               <th className="py-3.5 pl-3 pr-6 text-right">Action</th>
@@ -342,10 +311,9 @@ export function StudentDirectoryTab({
                       <p className="text-[11px] text-charcoal/60 truncate">{student.department}</p>
                     </td>
 
-                    {/* Year & Cohort */}
+                    {/* Academic Year */}
                     <td className="py-4 px-3">
                       <span className="font-semibold text-ink block">{student.academicYear}</span>
-                      <span className="text-[11px] text-charcoal/70 block">{student.groupCategory}</span>
                     </td>
 
                     {/* Availability Status */}
@@ -424,14 +392,10 @@ export function StudentDirectoryTab({
         >
           <div className="space-y-5 text-xs text-charcoal">
             {/* Status & Availability Overview */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 rounded-xl bg-offwhite p-4 border border-charcoal/10">
+            <div className="grid grid-cols-2 gap-3 rounded-xl bg-offwhite p-4 border border-charcoal/10">
               <div>
                 <span className="text-[10px] uppercase font-bold text-charcoal/50 block">Status</span>
                 <span className="font-bold text-ink text-sm">{activeStudent.enrollmentStatus}</span>
-              </div>
-              <div>
-                <span className="text-[10px] uppercase font-bold text-charcoal/50 block">RSVP Compliance</span>
-                <span className="font-bold text-emerald-800 text-sm">{activeStudent.rsvpRate}%</span>
               </div>
               <div>
                 <span className="text-[10px] uppercase font-bold text-charcoal/50 block">Sessions Attended</span>
@@ -460,8 +424,8 @@ export function StudentDirectoryTab({
                   <span className="font-medium text-ink">{activeStudent.department}</span>
                 </div>
                 <div>
-                  <span className="text-[10px] font-semibold text-charcoal/60 block">Scholar Cohort</span>
-                  <span className="font-medium text-ink">{activeStudent.groupCategory}</span>
+                  <span className="text-[10px] font-semibold text-charcoal/60 block">Academic Year</span>
+                  <span className="font-medium text-ink">{activeStudent.academicYear}</span>
                 </div>
                 <div>
                   <span className="text-[10px] font-semibold text-charcoal/60 block">Current Availability Tag</span>
@@ -470,7 +434,7 @@ export function StudentDirectoryTab({
               </div>
             </div>
 
-            {/* Contact & Social Information */}
+            {/* Contact Information */}
             <div className="rounded-xl border border-charcoal/15 bg-white p-4 space-y-3">
               <h4 className="font-bold text-ink text-sm flex items-center gap-1.5 border-b border-charcoal/10 pb-2">
                 <Phone className="h-4 w-4 text-gold" /> Contact Information
@@ -489,39 +453,8 @@ export function StudentDirectoryTab({
                   <MapPin className="h-4 w-4 text-charcoal/50" />
                   <span>{activeStudent.location}</span>
                 </div>
-                {activeStudent.linkedinUrl && (
-                  <div className="flex items-center gap-2">
-                    <ExternalLink className="h-4 w-4 text-charcoal/50" />
-                    <a
-                      href={activeStudent.linkedinUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-ink font-semibold hover:underline"
-                    >
-                      LinkedIn Profile
-                    </a>
-                  </div>
-                )}
               </div>
             </div>
-
-            {/* Bio & Skills */}
-            {activeStudent.bio && (
-              <div className="rounded-xl border border-charcoal/15 bg-white p-4 space-y-2">
-                <h4 className="font-bold text-ink text-sm">Bio & Aspirations</h4>
-                <p className="text-charcoal/80 leading-relaxed">{activeStudent.bio}</p>
-                <div className="pt-2 flex flex-wrap gap-1.5">
-                  {activeStudent.skills.map((skill) => (
-                    <span
-                      key={skill}
-                      className="rounded-md bg-gold/15 px-2 py-0.5 text-[11px] font-bold text-ink"
-                    >
-                      {skill}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         </Modal>
       )}

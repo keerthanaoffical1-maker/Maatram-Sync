@@ -36,13 +36,10 @@ function createMockStudent(
     institution: 'College of Engineering, Guindy',
     department: 'Computer Science & Engineering',
     academicYear: '3rd Year',
-    groupCategory: 'Tech Cohort 2024',
     enrollmentStatus: 'Active',
     availabilityStatus: 'Full Weekend Available',
-    skills: ['React', 'TypeScript'],
     location: 'Chennai',
     sessionsAttended: 5,
-    rsvpRate: 90,
     lastActive: 'Today',
     weeklySlots: {},
     ...overrides,
@@ -80,7 +77,6 @@ export function runTests(): { passed: number; failed: number; results: string[] 
     const criteria: AvailabilityFilterCriteria = {
       institutions: [],
       academicYears: [],
-      groupCategories: [],
       startDate: '2026-11-21',
       endDate: '2026-11-21',
       durationHours: 2,
@@ -113,7 +109,6 @@ export function runTests(): { passed: number; failed: number; results: string[] 
     const criteria: AvailabilityFilterCriteria = {
       institutions: [],
       academicYears: [],
-      groupCategories: [],
       startDate: '2026-11-21',
       endDate: '2026-11-21',
       durationHours: 2,
@@ -154,7 +149,6 @@ export function runTests(): { passed: number; failed: number; results: string[] 
     const criteria: AvailabilityFilterCriteria = {
       institutions: [],
       academicYears: [],
-      groupCategories: [],
       startDate: '2026-11-21',
       endDate: '2026-11-21',
       durationHours: 2,
@@ -183,7 +177,6 @@ export function runTests(): { passed: number; failed: number; results: string[] 
     const criteria: AvailabilityFilterCriteria = {
       institutions: [],
       academicYears: [],
-      groupCategories: [],
       startDate: '2026-11-21',
       endDate: '2026-11-21',
       durationHours: 2,
@@ -215,7 +208,6 @@ export function runTests(): { passed: number; failed: number; results: string[] 
     const criteria: AvailabilityFilterCriteria = {
       institutions: ['College of Engineering, Guindy', 'Madras Institute of Technology'],
       academicYears: [],
-      groupCategories: [],
       startDate: '2026-11-21',
       endDate: '2026-11-21',
     };
@@ -242,7 +234,6 @@ export function runTests(): { passed: number; failed: number; results: string[] 
     const criteria: AvailabilityFilterCriteria = {
       institutions: [],
       academicYears: ['3rd Year', '4th Year'],
-      groupCategories: [],
       startDate: '2026-11-21',
       endDate: '2026-11-21',
     };
@@ -315,7 +306,6 @@ export function runTests(): { passed: number; failed: number; results: string[] 
     const criteria: AvailabilityFilterCriteria = {
       institutions: [],
       academicYears: [],
-      groupCategories: [],
       startDate: '2026-11-21',
       endDate: '2026-11-21',
       durationHours: 2,
@@ -347,7 +337,6 @@ export function runTests(): { passed: number; failed: number; results: string[] 
     const criteria: AvailabilityFilterCriteria = {
       institutions: ['NonExistent College'],
       academicYears: [],
-      groupCategories: [],
       startDate: '2026-11-21',
       endDate: '2026-11-21',
       durationHours: 2,

@@ -4,7 +4,6 @@ import type {
   OfficeOverviewMetrics,
   OfficeUser,
   StudentDirectoryItem,
-  StudentInvitationRecord,
 } from '../../types/office';
 import { TIME_SLOTS } from '../student/mockStudentData';
 
@@ -29,13 +28,6 @@ export const INSTITUTIONS_LIST = [
 ];
 
 export const ACADEMIC_YEARS_LIST = ['2nd Year', '3rd Year', '4th Year'] as const;
-
-export const GROUP_CATEGORIES_LIST = [
-  'Tech Cohort 2024',
-  'Data & AI Cohort',
-  'Core Engineering Guild',
-  'Placement Readiness Track',
-];
 
 export const DEPARTMENTS_LIST = [
   'Computer Science & Engineering',
@@ -107,7 +99,7 @@ function generateStudentSlots(seed: number): Record<string, 'available' | 'unava
   return slots;
 }
 
-// Generate a rich cohort of 65 students
+// Generate 65 students for directory
 const FIRST_NAMES = [
   'Priya', 'Arun', 'Kavitha', 'Vijay', 'Deepa', 'Sanjay', 'Ananya', 'Rohan', 'Sneha', 'Manoj',
   'Divya', 'Karthik', 'Swetha', 'Naveen', 'Harini', 'Dinesh', 'Keerthana', 'Surya', 'Aarthi', 'Ganesh',
@@ -131,7 +123,6 @@ export const INITIAL_STUDENTS_DIRECTORY: StudentDirectoryItem[] = FIRST_NAMES.ma
   const idNum = String(idx + 1).padStart(3, '0');
   const institution = INSTITUTIONS_LIST[idx % INSTITUTIONS_LIST.length];
   const academicYear = ACADEMIC_YEARS_LIST[idx % ACADEMIC_YEARS_LIST.length];
-  const groupCategory = GROUP_CATEGORIES_LIST[idx % GROUP_CATEGORIES_LIST.length];
   const studentId = `MS-2024-${idNum}`;
   const seed = idx + 1;
   const slots = generateStudentSlots(seed);
@@ -153,16 +144,6 @@ export const INITIAL_STUDENTS_DIRECTORY: StudentDirectoryItem[] = FIRST_NAMES.ma
   ];
   const department = depts[idx % depts.length];
 
-  const skillSets = [
-    ['React', 'TypeScript', 'Node.js', 'PostgreSQL'],
-    ['Python', 'Machine Learning', 'TensorFlow', 'Data Structures'],
-    ['Java', 'Spring Boot', 'Microservices', 'SQL'],
-    ['C++', 'Embedded Systems', 'IoT', 'RTOS'],
-    ['Cloud Computing', 'AWS', 'Docker', 'Kubernetes'],
-    ['Data Analytics', 'PowerBI', 'Python', 'Excel Modelling'],
-  ];
-  const skills = skillSets[idx % skillSets.length];
-
   return {
     id: `std-${idNum}`,
     studentId,
@@ -172,22 +153,16 @@ export const INITIAL_STUDENTS_DIRECTORY: StudentDirectoryItem[] = FIRST_NAMES.ma
     institution,
     department,
     academicYear,
-    groupCategory,
     enrollmentStatus: 'Active',
     availabilityStatus,
-    skills,
     location: 'Chennai, Tamil Nadu',
-    linkedinUrl: `https://linkedin.com/in/${firstName.toLowerCase()}-${lastName.split(' ')[0].toLowerCase()}`,
-    githubUrl: `https://github.com/${firstName.toLowerCase()}${idNum}`,
-    bio: `${academicYear} scholar studying ${department} at ${institution}. Active participant in Maatram technical initiatives.`,
     sessionsAttended: 3 + (idx % 7),
-    rsvpRate: 85 + (idx % 15),
     lastActive: idx % 3 === 0 ? 'Today' : idx % 3 === 1 ? 'Yesterday' : '3 days ago',
     weeklySlots: slots,
   };
 });
 
-// Pre-configured events with invitation response histories
+// Pre-configured events
 export const INITIAL_OFFICE_EVENTS: EventPlan[] = [
   {
     id: 'evt-301',
@@ -198,7 +173,6 @@ export const INITIAL_OFFICE_EVENTS: EventPlan[] = [
     locationOrLink: 'https://meet.google.com/syn-maat-ram',
     targetInstitutions: ['College of Engineering, Guindy', 'Madras Institute of Technology', 'PSG College of Technology'],
     academicYears: ['3rd Year', '4th Year'],
-    groupCategories: ['Tech Cohort 2024'],
     selectedDate: '2026-11-21',
     selectedTimeSlot: '10:00 AM - 12:00 PM',
     slotId: '10:00',
@@ -206,11 +180,7 @@ export const INITIAL_OFFICE_EVENTS: EventPlan[] = [
     mentorOrHost: 'Ramesh Sundaram (Senior SDE @ Amazon)',
     mentorRole: 'Senior SDE & Alumni Mentor',
     preparationNotes: 'Scholars should keep their resume PDF open and ensure webcam/mic are functioning.',
-    status: 'Invitations Sent',
-    invitedCount: 28,
-    acceptedCount: 21,
-    declinedCount: 3,
-    pendingCount: 4,
+    status: 'Confirmed',
     createdAt: '2026-11-16T10:00:00Z',
   },
   {
@@ -222,7 +192,6 @@ export const INITIAL_OFFICE_EVENTS: EventPlan[] = [
     locationOrLink: 'Maatram Innovation Hub, Hall B, Guindy, Chennai',
     targetInstitutions: ['College of Engineering, Guindy', 'SSN College of Engineering', 'Madras Institute of Technology'],
     academicYears: ['2nd Year', '3rd Year'],
-    groupCategories: ['Tech Cohort 2024', 'Placement Readiness Track'],
     selectedDate: '2026-11-22',
     selectedTimeSlot: '02:00 PM - 04:00 PM',
     slotId: '14:00',
@@ -230,11 +199,7 @@ export const INITIAL_OFFICE_EVENTS: EventPlan[] = [
     mentorOrHost: 'Meenakshi Iyer (Talent Acquisition Lead @ Freshworks)',
     mentorRole: 'Head of Campus Hiring',
     preparationNotes: 'Bring two printed copies of your one-page technical resume.',
-    status: 'Invitations Sent',
-    invitedCount: 40,
-    acceptedCount: 32,
-    declinedCount: 2,
-    pendingCount: 6,
+    status: 'Confirmed',
     createdAt: '2026-11-17T11:30:00Z',
   },
   {
@@ -251,7 +216,6 @@ export const INITIAL_OFFICE_EVENTS: EventPlan[] = [
       'Coimbatore Institute of Technology',
     ],
     academicYears: ['3rd Year', '4th Year'],
-    groupCategories: ['Tech Cohort 2024', 'Data & AI Cohort'],
     selectedDate: '2026-11-25',
     selectedTimeSlot: '06:30 PM - 08:30 PM',
     slotId: '18:00',
@@ -260,10 +224,6 @@ export const INITIAL_OFFICE_EVENTS: EventPlan[] = [
     mentorRole: 'Staff Software Engineer',
     preparationNotes: 'Review fundamental HTTP methods, load balancing concepts, and client-server caching.',
     status: 'Confirmed',
-    invitedCount: 45,
-    acceptedCount: 43,
-    declinedCount: 1,
-    pendingCount: 1,
     createdAt: '2026-11-15T09:00:00Z',
   },
   {
@@ -275,7 +235,6 @@ export const INITIAL_OFFICE_EVENTS: EventPlan[] = [
     locationOrLink: 'Maatram Training Lab 2, CIT Campus, Coimbatore',
     targetInstitutions: ['Coimbatore Institute of Technology', 'PSG College of Technology', 'Government College of Technology'],
     academicYears: ['3rd Year', '4th Year'],
-    groupCategories: ['Core Engineering Guild'],
     selectedDate: '2026-11-28',
     selectedTimeSlot: '10:00 AM - 01:00 PM',
     slotId: '10:00',
@@ -284,46 +243,8 @@ export const INITIAL_OFFICE_EVENTS: EventPlan[] = [
     mentorRole: 'Automotive Systems Lead',
     preparationNotes: 'Laptops with STM32CubeIDE pre-installed.',
     status: 'Planned',
-    invitedCount: 0,
-    acceptedCount: 0,
-    declinedCount: 0,
-    pendingCount: 0,
     createdAt: '2026-11-18T14:00:00Z',
   },
-];
-
-// Pre-configured invitations list
-export const INITIAL_OFFICE_INVITATIONS: StudentInvitationRecord[] = [
-  ...INITIAL_STUDENTS_DIRECTORY.slice(0, 28).map((student, idx) => ({
-    id: `inv-rec-${idx + 1}`,
-    eventId: 'evt-301',
-    eventName: 'Full-Stack Mock Technical Interview with Amazon Mentors',
-    studentId: student.id,
-    studentName: student.name,
-    studentEmail: student.email,
-    institution: student.institution,
-    academicYear: student.academicYear,
-    groupCategory: student.groupCategory,
-    status: idx < 21 ? ('Accepted' as const) : idx < 24 ? ('Declined' as const) : ('Pending' as const),
-    sentAt: '2026-11-16 10:15 AM',
-    respondedAt: idx < 24 ? '2026-11-17 04:30 PM' : undefined,
-    declineReason: idx >= 21 && idx < 24 ? 'Conflicting internal college examination.' : undefined,
-  })),
-  ...INITIAL_STUDENTS_DIRECTORY.slice(10, 50).map((student, idx) => ({
-    id: `inv-rec-b-${idx + 1}`,
-    eventId: 'evt-302',
-    eventName: 'Resume Critique & Personal Tech Branding Lab',
-    studentId: student.id,
-    studentName: student.name,
-    studentEmail: student.email,
-    institution: student.institution,
-    academicYear: student.academicYear,
-    groupCategory: student.groupCategory,
-    status: idx < 32 ? ('Accepted' as const) : idx < 34 ? ('Declined' as const) : ('Pending' as const),
-    sentAt: '2026-11-17 11:45 AM',
-    respondedAt: idx < 34 ? '2026-11-18 01:15 PM' : undefined,
-    declineReason: idx >= 32 && idx < 34 ? 'Out of town for family commitment.' : undefined,
-  })),
 ];
 
 export const INITIAL_OFFICE_ACTIVITIES: OfficeActivityLog[] = [
@@ -336,33 +257,17 @@ export const INITIAL_OFFICE_ACTIVITIES: OfficeActivityLog[] = [
     actor: 'Karthik S.',
   },
   {
-    id: 'act-2',
-    action: 'RSVP Milestone Reached',
-    details: 'Resume Critique Lab reached 32/35 confirmed participants (91% response rate).',
-    timestamp: '3 hours ago',
-    type: 'invitation',
-    actor: 'Automated Sync',
-  },
-  {
     id: 'act-3',
     action: 'Availability Analysis Run',
-    details: 'Analyzed weekend schedule for Tech Cohort 2024 (identified Sunday 2 PM as 91% overlap peak).',
+    details: 'Analyzed weekend schedule for Engineering scholars (identified Sunday 2 PM as 91% overlap peak).',
     timestamp: '5 hours ago',
     type: 'student',
     actor: 'Karthik S.',
   },
   {
-    id: 'act-4',
-    action: 'Batch Invitations Dispatched',
-    details: 'Sent 28 interview slot invitations for Amazon Mock Interview session.',
-    timestamp: '1 day ago',
-    type: 'invitation',
-    actor: 'Ananya S.',
-  },
-  {
     id: 'act-5',
     action: 'Session Confirmed',
-    details: 'Confirmed Google Meet session for System Design Workshop on Nov 25 with 43 accepted participants.',
+    details: 'Confirmed Google Meet session for System Design Workshop on Nov 25.',
     timestamp: '2 days ago',
     type: 'session',
     actor: 'Karthik S.',
@@ -373,7 +278,5 @@ export const INITIAL_OFFICE_METRICS: OfficeOverviewMetrics = {
   totalRegisteredStudents: INITIAL_STUDENTS_DIRECTORY.length,
   activeStudents: INITIAL_STUDENTS_DIRECTORY.filter((s) => s.availabilityStatus !== 'Unavailable / Not Submitted').length,
   upcomingEvents: INITIAL_OFFICE_EVENTS.filter((e) => e.status !== 'Cancelled' && e.status !== 'Completed').length,
-  pendingInvitations: INITIAL_OFFICE_INVITATIONS.filter((i) => i.status === 'Pending').length,
-  overallRsvpRate: 88,
   averageAvailabilityRate: 76,
 };

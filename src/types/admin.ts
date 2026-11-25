@@ -21,15 +21,10 @@ export interface AdminStudentItem {
   institution: string;
   department: string;
   academicYear: '1st Year' | '2nd Year' | '3rd Year' | '4th Year';
-  groupCategory: string; // e.g. "Tech Cohort 2024"
   accountStatus: AccountStatus;
   registrationDate: string; // "2026-11-15"
   availabilityStatus: StudentAvailabilityCategory;
   location: string;
-  skills: string[];
-  bio?: string;
-  linkedinUrl?: string;
-  githubUrl?: string;
 }
 
 export interface InstitutionItem {
@@ -44,15 +39,6 @@ export interface InstitutionItem {
   registeredStudentCount: number;
   establishedYear?: number;
   website?: string;
-}
-
-export interface CategoryGroupItem {
-  id: string;
-  name: string;
-  type: 'academicYear' | 'department' | 'cohortGroup';
-  description?: string;
-  studentCount: number;
-  createdAt: string;
 }
 
 export interface AdminActivityItem {
@@ -73,7 +59,6 @@ export interface BulkImportRow {
   institution: string;
   department: string;
   academicYear: string;
-  groupCategory: string;
   studentId: string;
   isValid: boolean;
   errors: string[];
@@ -92,6 +77,5 @@ export interface AdminOverviewMetrics {
   totalInstitutions: number;
   activeStudents: number;
   studentsAddedRecently: number; // added in last 30 days
-  totalCohorts: number;
   systemHealth: string;
 }

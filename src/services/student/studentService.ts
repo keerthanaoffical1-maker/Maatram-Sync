@@ -1,7 +1,6 @@
 import { isSupabaseConfigured, supabase } from '../../lib/supabaseClient';
 import type {
   AvailabilitySummary,
-  EventInvitation,
   SlotStatus,
   StudentNotification,
   StudentProfile,
@@ -9,7 +8,6 @@ import type {
   WeeklyAvailability,
 } from '../../types/student';
 import {
-  INITIAL_INVITATIONS,
   INITIAL_NOTIFICATIONS,
   INITIAL_SESSIONS,
   INITIAL_STUDENT_PROFILE,
@@ -21,7 +19,6 @@ const wait = (ms = 150) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const STORAGE_KEYS = {
   PROFILE: 'maatram.student.profile',
-  INVITATIONS: 'maatram.student.invitations',
   SESSIONS: 'maatram.student.sessions',
   NOTIFICATIONS: 'maatram.student.notifications',
   AVAILABILITY_PREFIX: 'maatram.student.availability.',
@@ -46,14 +43,12 @@ function saveStored<T>(key: string, data: T): void {
 
 class StudentService {
   private profile: StudentProfile;
-  private invitations: EventInvitation[];
   private sessions: StudentSession[];
   private notifications: StudentNotification[];
   private availabilityCache: Map<string, Record<string, SlotStatus>> = new Map();
 
   constructor() {
     this.profile = loadStored(STORAGE_KEYS.PROFILE, INITIAL_STUDENT_PROFILE);
-    this.invitations = loadStored(STORAGE_KEYS.INVITATIONS, INITIAL_INVITATIONS);
     this.sessions = loadStored(STORAGE_KEYS.SESSIONS, INITIAL_SESSIONS);
     this.notifications = loadStored(STORAGE_KEYS.NOTIFICATIONS, INITIAL_NOTIFICATIONS);
   }
@@ -78,19 +73,13 @@ class StudentService {
               department,
               student_id,
               account_status,
-              skills,
-              bio,
-              linkedin_url,
-              github_url,
-              institutions (institution_name),
-              student_groups (group_name)
+              institutions (institution_name)
             `)
             .eq('id', user.id)
             .single();
 
           if (!error && data) {
             const instName = (data.institutions as any)?.institution_name || this.profile.institution;
-            const groupName = (data.student_groups as any)?.group_name || this.profile.groupCategory;
 
             this.profile = {
               ...this.profile,
@@ -101,14 +90,9 @@ class StudentService {
               institution: instName,
               department: data.department || this.profile.department,
               academicYear: data.academic_year || this.profile.academicYear,
-              groupCategory: groupName,
               studentId: data.student_id || this.profile.studentId,
               role: 'student',
               enrollmentStatus: data.account_status === 'Active' ? 'Active' : 'On Leave',
-              skills: data.skills && data.skills.length > 0 ? data.skills : this.profile.skills,
-              bio: data.bio || this.profile.bio,
-              linkedinUrl: data.linkedin_url || this.profile.linkedinUrl,
-              githubUrl: data.github_url || this.profile.githubUrl,
             };
             saveStored(STORAGE_KEYS.PROFILE, this.profile);
             return { ...this.profile };
@@ -129,7 +113,6 @@ class StudentService {
       institution: _ignoreInst,
       department: _ignoreDept,
       academicYear: _ignoreYear,
-      groupCategory: _ignoreGroup,
       studentId: _ignoreId,
       enrollmentStatus: _ignoreStatus,
       ...permittedUpdates
@@ -138,15 +121,11 @@ class StudentService {
     if (isSupabaseConfigured) {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
+        if (user && permittedUpdates.phone) {
           await supabase
             .from('profiles')
             .update({
               phone: permittedUpdates.phone,
-              bio: permittedUpdates.bio,
-              skills: permittedUpdates.skills,
-              linkedin_url: permittedUpdates.linkedinUrl,
-              github_url: permittedUpdates.githubUrl,
             })
             .eq('id', user.id);
         }
@@ -298,134 +277,60 @@ class StudentService {
   }
 
   // ==========================================
-  // Invitations & Sessions
+  // Scheduled Sessions
   // ==========================================
-  async getInvitations(): Promise<EventInvitation[]> {
+  async getUpcomingSessions(): Promise<StudentSession[]> {
     if (isSupabaseConfigured) {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data, error } = await supabase
-            .from('event_invitations')
-            .select(`
-              id,
-              response_status,
-              invited_at,
-              responded_at,
-              decline_reason,
-              events (
-                id,
-                title,
-                category,
-                description,
-                event_mode,
-                location,
-                start_datetime,
-                end_datetime,
-                mentor_name
-              )
-            `)
-            .eq('student_id', user.id);
+        const { data, error } = await supabase
+          .from('events')
+          .select(`
+            id,
+            title,
+            category,
+            description,
+            event_mode,
+            location,
+            start_datetime,
+            end_datetime,
+            mentor_name,
+            meeting_url
+          `)
+          .eq('status', 'Scheduled')
+          .order('start_datetime', { ascending: true });
 
-          if (!error && data && data.length > 0) {
-            const mapped: EventInvitation[] = data.map((inv: any) => {
-              const ev = inv.events || {};
-              const startDate = new Date(ev.start_datetime || new Date().toISOString());
-              return {
-                id: inv.id,
-                eventName: ev.title || 'Technical Workshop',
-                category: ev.category || 'Technical Workshop',
-                date: startDate.toLocaleDateString('en-IN', {
-                  weekday: 'short',
-                  day: 'numeric',
-                  month: 'short',
-                  year: 'numeric',
-                }),
-                rawDate: ev.start_datetime ? ev.start_datetime.split('T')[0] : '2026-11-25',
-                time: startDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
-                institutionTarget: 'Maatram Scholars',
-                status: inv.response_status,
-                organizer: 'Maatram Foundation Operations Team',
-                speaker: ev.mentor_name || 'Senior Industry Mentor',
-                description: ev.description || 'Interactive hands-on session for engineering scholars.',
-                mode: ev.event_mode || 'Online',
-                location: ev.location || 'Online / Google Meet',
-                actionDeadline: '24 hours prior to session',
-                slotsRemaining: 15,
-              };
-            });
-            this.invitations = mapped;
-            saveStored(STORAGE_KEYS.INVITATIONS, mapped);
-            return mapped;
-          }
+        if (!error && data && data.length > 0) {
+          const mapped: StudentSession[] = data.map((ev: any) => {
+            const startDate = new Date(ev.start_datetime);
+            return {
+              id: ev.id,
+              sessionTitle: ev.title,
+              category: ev.category,
+              date: startDate.toLocaleDateString('en-IN', {
+                weekday: 'short',
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
+              }),
+              rawDate: ev.start_datetime.split('T')[0],
+              time: startDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+              mode: ev.event_mode || 'Online',
+              locationOrLink: ev.meeting_url || ev.location || 'Google Meet',
+              status: 'Confirmed',
+              mentorOrHost: ev.mentor_name || 'Maatram Office Team',
+              preparationNotes: ev.description || 'Confirmed scheduled workshop session.',
+              meetingPlatform: ev.event_mode === 'Online' ? 'Google Meet' : 'In-Person',
+            };
+          });
+          this.sessions = mapped;
+          saveStored(STORAGE_KEYS.SESSIONS, mapped);
+          return mapped;
         }
       } catch (err) {
-        console.warn('Supabase getInvitations fallback:', err);
+        console.warn('Supabase getUpcomingSessions fallback:', err);
       }
     }
 
-    await wait(80);
-    return [...this.invitations];
-  }
-
-  async respondToInvitation(
-    invitationId: string,
-    status: 'Accepted' | 'Declined',
-  ): Promise<{ invitation: EventInvitation; newSession?: StudentSession }> {
-    if (isSupabaseConfigured) {
-      try {
-        await supabase
-          .from('event_invitations')
-          .update({
-            response_status: status,
-            responded_at: new Date().toISOString(),
-          })
-          .eq('id', invitationId);
-      } catch (err) {
-        console.warn('Supabase respondToInvitation failed, updating locally:', err);
-      }
-    }
-
-    const invIndex = this.invitations.findIndex((i) => i.id === invitationId);
-    if (invIndex === -1) {
-      throw new Error('Invitation not found');
-    }
-
-    const targetInv = { ...this.invitations[invIndex], status };
-    this.invitations[invIndex] = targetInv;
-    saveStored(STORAGE_KEYS.INVITATIONS, this.invitations);
-
-    let createdSession: StudentSession | undefined;
-
-    if (status === 'Accepted') {
-      const existing = this.sessions.find((s) => s.id === `from-${targetInv.id}`);
-      if (!existing) {
-        createdSession = {
-          id: `from-${targetInv.id}`,
-          sessionTitle: targetInv.eventName,
-          category: targetInv.category,
-          date: targetInv.date,
-          rawDate: targetInv.rawDate,
-          time: targetInv.time,
-          mode: targetInv.mode,
-          locationOrLink:
-            targetInv.mode === 'Online'
-              ? 'https://meet.google.com/syn-maat-ram'
-              : targetInv.location,
-          status: 'Confirmed',
-          mentorOrHost: targetInv.speaker || targetInv.organizer,
-          preparationNotes: 'Session link verified. Join 5 minutes before scheduled start.',
-          meetingPlatform: targetInv.mode === 'Online' ? 'Google Meet' : 'In-Person',
-        };
-        this.sessions = [createdSession, ...this.sessions];
-        saveStored(STORAGE_KEYS.SESSIONS, this.sessions);
-      }
-    }
-
-    return { invitation: targetInv, newSession: createdSession };
-  }
-
-  async getUpcomingSessions(): Promise<StudentSession[]> {
     await wait(80);
     return [...this.sessions];
   }
@@ -461,10 +366,6 @@ class StudentService {
     const availableSlots = Object.values(slots).filter((s) => s === 'available').length;
     const unavailableSlots = Object.values(slots).filter((s) => s === 'unavailable').length;
 
-    const invitations = await this.getInvitations();
-    const upcomingInvitationsCount = invitations.filter((i) => i.status === 'Pending').length;
-    const pendingResponsesCount = upcomingInvitationsCount;
-
     const sessions = await this.getUpcomingSessions();
     const confirmedSessionsCount = sessions.filter((s) => s.status === 'Confirmed').length;
 
@@ -473,9 +374,7 @@ class StudentService {
       totalSlotsMarked: totalSlots,
       availableHours: availableSlots,
       unavailableHours: unavailableSlots,
-      upcomingInvitationsCount,
       confirmedSessionsCount,
-      pendingResponsesCount,
     };
   }
 }

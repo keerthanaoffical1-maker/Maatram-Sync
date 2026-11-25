@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Bell, Calendar, Check, ExternalLink, Inbox, Info, Sparkles } from 'lucide-react';
+import { Bell, Calendar, Check, ExternalLink, Info, Sparkles } from 'lucide-react';
 import type { StudentNotification } from '../../types/student';
 
 interface NotificationPopoverProps {
@@ -36,8 +36,6 @@ export function NotificationPopover({
 
   const getIcon = (type: StudentNotification['type']) => {
     switch (type) {
-      case 'invitation':
-        return <Inbox className="h-4 w-4 text-gold shrink-0" />;
       case 'session':
         return <Calendar className="h-4 w-4 text-emerald-500 shrink-0" />;
       case 'availability':

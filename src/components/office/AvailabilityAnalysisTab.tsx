@@ -34,7 +34,6 @@ import type {
 import {
   ACADEMIC_YEARS_LIST,
   DEPARTMENTS_LIST,
-  GROUP_CATEGORIES_LIST,
   INSTITUTIONS_LIST,
 } from '../../services/office/mockOfficeData';
 import { officeService } from '../../services/office/officeService';
@@ -63,7 +62,6 @@ export function AvailabilityAnalysisTab({
   const [selectedInstitutions, setSelectedInstitutions] = useState<string[]>([]);
   const [selectedYears, setSelectedYears] = useState<string[]>([]);
   const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
-  const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
 
   // Scheduling Parameters
@@ -121,7 +119,6 @@ export function AvailabilityAnalysisTab({
         institutions: selectedInstitutions,
         academicYears: selectedYears,
         departments: selectedDepartments,
-        groupCategories: selectedGroups,
         selectedStudentIds: selectedStudentIds.length > 0 ? selectedStudentIds : undefined,
         startDate,
         endDate,
@@ -157,7 +154,6 @@ export function AvailabilityAnalysisTab({
     selectedInstitutions,
     selectedYears,
     selectedDepartments,
-    selectedGroups,
     selectedStudentIds,
     startDate,
     endDate,
@@ -184,12 +180,6 @@ export function AvailabilityAnalysisTab({
     );
   };
 
-  const toggleGroup = (grp: string) => {
-    setSelectedGroups((prev) =>
-      prev.includes(grp) ? prev.filter((g) => g !== grp) : [...prev, grp],
-    );
-  };
-
   const toggleIndividualStudent = (studentId: string) => {
     setSelectedStudentIds((prev) =>
       prev.includes(studentId) ? prev.filter((id) => id !== studentId) : [...prev, studentId],
@@ -200,7 +190,6 @@ export function AvailabilityAnalysisTab({
     setSelectedInstitutions([]);
     setSelectedYears([]);
     setSelectedDepartments([]);
-    setSelectedGroups([]);
     setSelectedStudentIds([]);
     setMinThresholdPercentage(60);
     setFilterByThreshold(false);
@@ -217,7 +206,6 @@ export function AvailabilityAnalysisTab({
           institutions: selectedInstitutions,
           academicYears: selectedYears,
           departments: selectedDepartments,
-          groupCategories: selectedGroups,
           selectedStudentIds: selectedStudentIds.length > 0 ? selectedStudentIds : undefined,
           startDate,
           endDate,
@@ -347,7 +335,6 @@ export function AvailabilityAnalysisTab({
                 {(selectedInstitutions.length > 0 ||
                   selectedYears.length > 0 ||
                   selectedDepartments.length > 0 ||
-                  selectedGroups.length > 0 ||
                   selectedStudentIds.length > 0) && (
                   <Button
                     variant="ghost"
@@ -364,7 +351,7 @@ export function AvailabilityAnalysisTab({
               </div>
             </div>
           }
-          subtitle="Define cohort audience criteria, date window, event duration, and minimum acceptable turnout threshold"
+          subtitle="Define target audience criteria, date window, event duration, and minimum acceptable turnout threshold"
         />
 
         <CardContent className="space-y-5 pt-0">
@@ -448,32 +435,9 @@ export function AvailabilityAnalysisTab({
             </div>
           </div>
 
-          {/* Row 3: Cohort Groups & Individual Scholar Picker */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-2 border-t border-charcoal/10">
-            <div className="space-y-2">
-              <span className="text-xs font-semibold text-charcoal block">
-                Scholar Cohort Group ({selectedGroups.length || 'All Groups'})
-              </span>
-              <div className="flex flex-wrap gap-1.5">
-                {GROUP_CATEGORIES_LIST.map((grp) => (
-                  <button
-                    key={grp}
-                    type="button"
-                    onClick={() => toggleGroup(grp)}
-                    className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
-                      selectedGroups.includes(grp)
-                        ? 'bg-ink text-gold font-bold'
-                        : 'bg-charcoal/5 text-charcoal hover:bg-charcoal/10'
-                    }`}
-                  >
-                    {grp}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Individual Scholar Selection Trigger */}
-            <div className="space-y-2">
+          {/* Row 3: Individual Scholar Picker */}
+          <div className="pt-2 border-t border-charcoal/10">
+            <div className="space-y-2 max-w-xl">
               <div className="flex items-center justify-between text-xs font-semibold text-charcoal">
                 <span>Individual Scholar Filter</span>
                 {selectedStudentIds.length > 0 && (
