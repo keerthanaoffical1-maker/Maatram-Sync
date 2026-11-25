@@ -4,7 +4,6 @@ import {
   CalendarPlus,
   LayoutDashboard,
   LogOut,
-  MailCheck,
   ShieldAlert,
   Users,
   X,
@@ -16,14 +15,12 @@ export type OfficeNavTab =
   | 'students'
   | 'analysis'
   | 'events'
-  | 'invitations'
   | 'sessions';
 
 interface OfficeSidebarProps {
   activeTab: OfficeNavTab;
   onSelectTab: (tab: OfficeNavTab) => void;
   onLogout: () => void;
-  pendingInvitationsCount?: number;
   upcomingSessionsCount?: number;
   isMobileOpen?: boolean;
   onCloseMobile?: () => void;
@@ -33,7 +30,6 @@ export function OfficeSidebar({
   activeTab,
   onSelectTab,
   onLogout,
-  pendingInvitationsCount = 0,
   upcomingSessionsCount = 0,
   isMobileOpen = false,
   onCloseMobile,
@@ -54,12 +50,6 @@ export function OfficeSidebar({
       highlightBadge: 'Core',
     },
     { id: 'events', label: 'Event Planning', icon: CalendarPlus },
-    {
-      id: 'invitations',
-      label: 'Invitations & Responses',
-      icon: MailCheck,
-      badge: pendingInvitationsCount,
-    },
     {
       id: 'sessions',
       label: 'Session Management',

@@ -26,18 +26,11 @@ export interface StudentDirectoryItem {
   institution: string;
   department: string;
   academicYear: '1st Year' | '2nd Year' | '3rd Year' | '4th Year';
-  groupCategory: string; // e.g. "Tech Cohort 2024", "Core Engineering Guild", etc.
   enrollmentStatus: 'Active' | 'On Leave' | 'Graduated';
   availabilityStatus: StudentAvailabilityCategory;
-  skills: string[];
   location: string;
-  linkedinUrl?: string;
-  githubUrl?: string;
   avatarUrl?: string;
-  bio?: string;
-  // Activity metrics
   sessionsAttended: number;
-  rsvpRate: number; // percentage (e.g. 92)
   lastActive: string;
   // Specific day-slot availability: Record<`${date}_${slotId}`, SlotStatus>
   weeklySlots: Record<string, SlotStatus>;
@@ -46,7 +39,6 @@ export interface StudentDirectoryItem {
 export interface AvailabilityFilterCriteria {
   institutions: string[];
   academicYears: string[];
-  groupCategories: string[];
   departments?: string[];
   selectedStudentIds?: string[];
   startDate: string; // YYYY-MM-DD
@@ -113,7 +105,6 @@ export interface SmartRecommendationEngineResult {
 export type EventStatus =
   | 'Draft'
   | 'Planned'
-  | 'Invitations Sent'
   | 'Confirmed'
   | 'Completed'
   | 'Cancelled';
@@ -127,7 +118,6 @@ export interface EventPlan {
   locationOrLink: string;
   targetInstitutions: string[];
   academicYears: string[];
-  groupCategories: string[];
   selectedDate: string; // YYYY-MM-DD
   selectedTimeSlot: string; // e.g. "10:00 AM - 12:00 PM"
   slotId: string;
@@ -136,27 +126,7 @@ export interface EventPlan {
   mentorRole?: string;
   preparationNotes?: string;
   status: EventStatus;
-  invitedCount: number;
-  acceptedCount: number;
-  declinedCount: number;
-  pendingCount: number;
   createdAt: string;
-}
-
-export interface StudentInvitationRecord {
-  id: string;
-  eventId: string;
-  eventName: string;
-  studentId: string;
-  studentName: string;
-  studentEmail: string;
-  institution: string;
-  academicYear: string;
-  groupCategory: string;
-  status: 'Pending' | 'Accepted' | 'Declined';
-  sentAt: string;
-  respondedAt?: string;
-  declineReason?: string;
 }
 
 export interface OfficeActivityLog {
@@ -164,7 +134,7 @@ export interface OfficeActivityLog {
   action: string;
   details: string;
   timestamp: string;
-  type: 'event' | 'invitation' | 'student' | 'session';
+  type: 'event' | 'student' | 'session';
   actor: string;
 }
 
@@ -172,7 +142,5 @@ export interface OfficeOverviewMetrics {
   totalRegisteredStudents: number;
   activeStudents: number;
   upcomingEvents: number;
-  pendingInvitations: number;
-  overallRsvpRate: number;
   averageAvailabilityRate: number;
 }

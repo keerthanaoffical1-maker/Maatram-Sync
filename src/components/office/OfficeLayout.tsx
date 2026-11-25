@@ -18,7 +18,6 @@ import { authService } from '../../services/auth';
 import { ToastContainer } from '../ui/Toast';
 import { AvailabilityAnalysisTab } from './AvailabilityAnalysisTab';
 import { EventPlanningTab } from './EventPlanningTab';
-import { InvitationsTab } from './InvitationsTab';
 import { OfficeOverviewTab } from './OfficeOverviewTab';
 import { OfficeSidebar, type OfficeNavTab } from './OfficeSidebar';
 import { OfficeTopNavbar } from './OfficeTopNavbar';
@@ -133,7 +132,6 @@ export function OfficeLayout({ initialTab = 'overview' }: OfficeLayoutProps) {
   };
 
   const upcomingSessions = events.filter((e) => e.status !== 'Draft' && e.status !== 'Cancelled');
-  const pendingInvitationsCount = metrics.pendingInvitations;
 
   return (
     <div className="min-h-screen bg-offwhite text-ink font-sans antialiased">
@@ -145,7 +143,6 @@ export function OfficeLayout({ initialTab = 'overview' }: OfficeLayoutProps) {
           navigate(`/office/${tab}`, { replace: true });
         }}
         onLogout={handleLogout}
-        pendingInvitationsCount={pendingInvitationsCount}
         upcomingSessionsCount={upcomingSessions.length}
         isMobileOpen={isMobileMenuOpen}
         onCloseMobile={() => setIsMobileMenuOpen(false)}
@@ -215,18 +212,6 @@ export function OfficeLayout({ initialTab = 'overview' }: OfficeLayoutProps) {
                     navigate(`/office/${tab}`, { replace: true });
                   }}
                   onShowToast={addToast}
-                />
-              )}
-
-              {activeTab === 'invitations' && (
-                <InvitationsTab
-                  events={events}
-                  students={students}
-                  onShowToast={addToast}
-                  onRefreshEvents={() => {
-                    officeService.getEvents().then(setEvents);
-                    officeService.getOverviewMetrics().then(setMetrics);
-                  }}
                 />
               )}
 

@@ -40,11 +40,6 @@ EXCEPTION
   WHEN duplicate_object THEN NULL;
 END $$;
 
-DO $$ BEGIN
-  CREATE TYPE invitation_response_status AS ENUM ('Pending', 'Accepted', 'Declined');
-EXCEPTION
-  WHEN duplicate_object THEN NULL;
-END $$;
 
 -- ==============================================================================
 -- 3. TABLES CREATION
@@ -61,15 +56,7 @@ CREATE TABLE IF NOT EXISTS public.institutions (
   created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
--- 3.2 Student Groups / Categories Table
-CREATE TABLE IF NOT EXISTS public.student_groups (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  group_name TEXT NOT NULL UNIQUE,
-  description TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
-);
-
--- 3.3 Profiles Table (Linked to auth.users)
+-- 3.2 Profiles Table (Linked to auth.users)
 CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   full_name TEXT NOT NULL,
@@ -79,13 +66,8 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   institution_id UUID REFERENCES public.institutions(id) ON DELETE SET NULL,
   academic_year TEXT,
   department TEXT,
-  group_id UUID REFERENCES public.student_groups(id) ON DELETE SET NULL,
   student_id TEXT UNIQUE,
   account_status account_status NOT NULL DEFAULT 'Active',
-  skills TEXT[] DEFAULT '{}'::text[],
-  bio TEXT,
-  linkedin_url TEXT,
-  github_url TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
@@ -114,7 +96,6 @@ CREATE TABLE IF NOT EXISTS public.events (
   end_datetime TIMESTAMPTZ NOT NULL,
   target_institutions TEXT[] DEFAULT '{}'::text[],
   target_academic_years TEXT[] DEFAULT '{}'::text[],
-  target_groups TEXT[] DEFAULT '{}'::text[],
   required_participants INTEGER NOT NULL DEFAULT 0,
   created_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
   status event_status NOT NULL DEFAULT 'Draft',
@@ -124,19 +105,7 @@ CREATE TABLE IF NOT EXISTS public.events (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
--- 3.6 Event Invitations Table
-CREATE TABLE IF NOT EXISTS public.event_invitations (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  event_id UUID NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
-  student_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-  response_status invitation_response_status NOT NULL DEFAULT 'Pending',
-  invited_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
-  responded_at TIMESTAMPTZ,
-  decline_reason TEXT,
-  CONSTRAINT uq_event_student UNIQUE (event_id, student_id)
-);
-
--- 3.7 Activity Logs Table
+-- 3.6 Activity Logs Table
 CREATE TABLE IF NOT EXISTS public.activity_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   actor_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
@@ -152,16 +121,12 @@ CREATE TABLE IF NOT EXISTS public.activity_logs (
 -- ==============================================================================
 CREATE INDEX IF NOT EXISTS idx_profiles_role ON public.profiles(role);
 CREATE INDEX IF NOT EXISTS idx_profiles_institution ON public.profiles(institution_id);
-CREATE INDEX IF NOT EXISTS idx_profiles_group ON public.profiles(group_id);
 CREATE INDEX IF NOT EXISTS idx_profiles_status ON public.profiles(account_status);
-CREATE INDEX IF NOT EXISTS idx_profiles_audience_filter ON public.profiles(role, account_status, institution_id, academic_year, department, group_id);
+CREATE INDEX IF NOT EXISTS idx_profiles_audience_filter ON public.profiles(role, account_status, institution_id, academic_year, department);
 CREATE INDEX IF NOT EXISTS idx_availability_student_date ON public.availability_entries(student_id, date);
 CREATE INDEX IF NOT EXISTS idx_availability_date_student_status ON public.availability_entries(date, student_id, availability_status);
 CREATE INDEX IF NOT EXISTS idx_availability_date_time ON public.availability_entries(date, start_time, end_time);
 CREATE INDEX IF NOT EXISTS idx_events_start_status ON public.events(start_datetime, status);
-CREATE INDEX IF NOT EXISTS idx_invitations_student ON public.event_invitations(student_id, response_status);
-CREATE INDEX IF NOT EXISTS idx_invitations_event ON public.event_invitations(event_id);
-CREATE INDEX IF NOT EXISTS idx_event_invitations_event_student ON public.event_invitations(event_id, student_id);
 CREATE INDEX IF NOT EXISTS idx_activity_logs_created ON public.activity_logs(created_at DESC);
 
 -- ==============================================================================
@@ -286,11 +251,9 @@ EXECUTE FUNCTION public.handle_new_user();
 
 -- Enable RLS on all tables
 ALTER TABLE public.institutions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.student_groups ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.availability_entries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.event_invitations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.activity_logs ENABLE ROW LEVEL SECURITY;
 
 -- ------------------------------------------------------------------------------
@@ -310,23 +273,7 @@ USING (public.get_user_role() = 'admin')
 WITH CHECK (public.get_user_role() = 'admin');
 
 -- ------------------------------------------------------------------------------
--- 6.2 Student Groups Policies
--- ------------------------------------------------------------------------------
-DROP POLICY IF EXISTS "Anyone authenticated can view student groups" ON public.student_groups;
-CREATE POLICY "Anyone authenticated can view student groups"
-ON public.student_groups FOR SELECT
-TO authenticated
-USING (true);
-
-DROP POLICY IF EXISTS "Admins can manage student groups" ON public.student_groups;
-CREATE POLICY "Admins can manage student groups"
-ON public.student_groups FOR ALL
-TO authenticated
-USING (public.get_user_role() = 'admin')
-WITH CHECK (public.get_user_role() = 'admin');
-
--- ------------------------------------------------------------------------------
--- 6.3 Profiles Policies
+-- 6.2 Profiles Policies
 -- ------------------------------------------------------------------------------
 -- Users can read their own profile
 DROP POLICY IF EXISTS "Users can view own profile" ON public.profiles;
@@ -351,18 +298,6 @@ ON public.profiles FOR SELECT
 TO authenticated
 USING (public.get_user_role() = 'admin');
 
--- Students can edit permitted personal details on their own profile
-DROP POLICY IF EXISTS "Students can edit permitted personal profile" ON public.profiles;
-CREATE POLICY "Students can edit permitted personal profile"
-ON public.profiles FOR UPDATE
-TO authenticated
-USING (id = auth.uid() AND public.get_user_role() = 'student')
-WITH CHECK (
-  id = auth.uid()
-  -- Cannot self-elevate role or modify registration institution
-  AND role = 'student'
-);
-
 -- Admins can create and edit student profiles
 DROP POLICY IF EXISTS "Admins can manage student profiles" ON public.profiles;
 CREATE POLICY "Admins can manage student profiles"
@@ -376,7 +311,7 @@ WITH CHECK (
 );
 
 -- ------------------------------------------------------------------------------
--- 6.4 Availability Entries Policies
+-- 6.3 Availability Entries Policies
 -- ------------------------------------------------------------------------------
 -- Students manage their own availability
 DROP POLICY IF EXISTS "Students can view own availability" ON public.availability_entries;
@@ -419,7 +354,7 @@ TO authenticated
 USING (public.get_user_role() = 'admin');
 
 -- ------------------------------------------------------------------------------
--- 6.5 Events Policies
+-- 6.4 Events Policies
 -- ------------------------------------------------------------------------------
 -- Office team has full management of events
 DROP POLICY IF EXISTS "Office team can manage events" ON public.events;
@@ -429,20 +364,13 @@ TO authenticated
 USING (public.get_user_role() = 'office')
 WITH CHECK (public.get_user_role() = 'office');
 
--- Students can view events they are invited to
-DROP POLICY IF EXISTS "Students can view invited events" ON public.events;
-CREATE POLICY "Students can view invited events"
+-- Students can view scheduled events
+DROP POLICY IF EXISTS "Students can view scheduled events" ON public.events;
+CREATE POLICY "Students can view scheduled events"
 ON public.events FOR SELECT
 TO authenticated
 USING (
-  public.get_user_role() = 'student' AND (
-    EXISTS (
-      SELECT 1 FROM public.event_invitations
-      WHERE event_invitations.event_id = events.id
-      AND event_invitations.student_id = auth.uid()
-    )
-    OR status = 'Scheduled'
-  )
+  public.get_user_role() = 'student' AND status = 'Scheduled'
 );
 
 -- Admins can view events (read-only, cannot plan or manage sessions)
@@ -453,40 +381,7 @@ TO authenticated
 USING (public.get_user_role() = 'admin');
 
 -- ------------------------------------------------------------------------------
--- 6.6 Event Invitations Policies
--- ------------------------------------------------------------------------------
--- Office team can dispatch and inspect invitations
-DROP POLICY IF EXISTS "Office team can manage invitations" ON public.event_invitations;
-CREATE POLICY "Office team can manage invitations"
-ON public.event_invitations FOR ALL
-TO authenticated
-USING (public.get_user_role() = 'office')
-WITH CHECK (public.get_user_role() = 'office');
-
--- Students can view their own invitations
-DROP POLICY IF EXISTS "Students can view own invitations" ON public.event_invitations;
-CREATE POLICY "Students can view own invitations"
-ON public.event_invitations FOR SELECT
-TO authenticated
-USING (student_id = auth.uid());
-
--- Students can respond (update) to their own invitations
-DROP POLICY IF EXISTS "Students can respond to invitations" ON public.event_invitations;
-CREATE POLICY "Students can respond to invitations"
-ON public.event_invitations FOR UPDATE
-TO authenticated
-USING (student_id = auth.uid())
-WITH CHECK (student_id = auth.uid());
-
--- Admins can view invitations (read-only)
-DROP POLICY IF EXISTS "Admins can view invitations" ON public.event_invitations;
-CREATE POLICY "Admins can view invitations"
-ON public.event_invitations FOR SELECT
-TO authenticated
-USING (public.get_user_role() = 'admin');
-
--- ------------------------------------------------------------------------------
--- 6.7 Activity Logs Policies
+-- 6.5 Activity Logs Policies
 -- ------------------------------------------------------------------------------
 -- Admins can view all activity logs
 DROP POLICY IF EXISTS "Admins can view all logs" ON public.activity_logs;

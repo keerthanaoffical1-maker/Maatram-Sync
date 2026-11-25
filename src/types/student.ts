@@ -3,30 +3,20 @@ export type SlotStatus = 'available' | 'unavailable' | 'unselected';
 export interface StudentProfile {
   id: string;
   name: string;
-  preferredName?: string;
   email: string;
+  phone: string;
   role: 'student';
   avatarUrl?: string;
-  // Locked fields - require administrative approval
   institution: string;
   department: string;
   academicYear: string;
-  groupCategory: string;
   studentId: string;
   enrollmentStatus: 'Active' | 'On Leave' | 'Graduated';
-  // Permitted editable fields
-  phone: string;
-  alternateEmail?: string;
-  bio: string;
-  skills: string[];
-  linkedinUrl?: string;
-  githubUrl?: string;
   location: string;
   notificationPreferences: {
     emailAlerts: boolean;
     smsAlerts: boolean;
     sessionReminders: boolean;
-    invitationAlerts: boolean;
   };
 }
 
@@ -55,8 +45,6 @@ export interface WeeklyAvailability {
   lastUpdated?: string;
 }
 
-export type InvitationStatus = 'Pending' | 'Accepted' | 'Declined';
-
 export type EventCategory =
   | 'Mock Interview'
   | 'Industry Mentorship'
@@ -64,24 +52,6 @@ export type EventCategory =
   | 'Technical Workshop'
   | 'Soft Skills'
   | 'Placement Drive';
-
-export interface EventInvitation {
-  id: string;
-  eventName: string;
-  category: EventCategory;
-  date: string; // "Saturday, Nov 21, 2026"
-  rawDate: string; // "2026-11-21"
-  time: string; // "10:00 AM - 11:30 AM"
-  institutionTarget: string; // "Maatram Foundation - Tech Scholars 2026"
-  status: InvitationStatus;
-  organizer: string;
-  speaker?: string;
-  description: string;
-  mode: 'Online' | 'Offline';
-  location: string;
-  actionDeadline: string;
-  slotsRemaining?: number;
-}
 
 export type SessionStatus = 'Confirmed' | 'Starting Soon' | 'Completed';
 
@@ -108,8 +78,8 @@ export interface StudentNotification {
   message: string;
   timestamp: string;
   read: boolean;
-  type: 'invitation' | 'session' | 'availability' | 'system';
-  targetTab?: 'overview' | 'availability' | 'invitations' | 'sessions' | 'profile';
+  type: 'session' | 'availability' | 'system';
+  targetTab?: 'overview' | 'availability' | 'sessions' | 'profile';
 }
 
 export interface AvailabilitySummary {
@@ -117,7 +87,5 @@ export interface AvailabilitySummary {
   totalSlotsMarked: number;
   availableHours: number;
   unavailableHours: number;
-  upcomingInvitationsCount: number;
   confirmedSessionsCount: number;
-  pendingResponsesCount: number;
 }

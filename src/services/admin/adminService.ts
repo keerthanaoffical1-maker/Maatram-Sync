@@ -5,7 +5,6 @@ import type {
   AdminStudentItem,
   BulkImportRow,
   BulkImportSummary,
-  CategoryGroupItem,
   InstitutionItem,
 } from '../../types/admin';
 import { validateEmail, validatePhone } from '../../lib/validation';
@@ -13,7 +12,6 @@ import {
   CURRENT_ADMIN_USER,
   INITIAL_ADMIN_ACTIVITIES,
   INITIAL_ADMIN_STUDENTS,
-  INITIAL_CATEGORIES,
   INITIAL_INSTITUTIONS,
 } from './mockAdminData';
 
@@ -22,7 +20,6 @@ const wait = (ms = 150) => new Promise((resolve) => setTimeout(resolve, ms));
 const STORAGE_KEYS = {
   ADMIN_STUDENTS: 'maatram.admin.students',
   ADMIN_INSTITUTIONS: 'maatram.admin.institutions',
-  ADMIN_CATEGORIES: 'maatram.admin.categories',
   ADMIN_ACTIVITIES: 'maatram.admin.activities',
 };
 
@@ -46,13 +43,11 @@ function saveStored<T>(key: string, data: T): void {
 class AdminService {
   private students: AdminStudentItem[];
   private institutions: InstitutionItem[];
-  private categories: CategoryGroupItem[];
   private activities: AdminActivityItem[];
 
   constructor() {
     this.students = loadStored(STORAGE_KEYS.ADMIN_STUDENTS, INITIAL_ADMIN_STUDENTS);
     this.institutions = loadStored(STORAGE_KEYS.ADMIN_INSTITUTIONS, INITIAL_INSTITUTIONS);
-    this.categories = loadStored(STORAGE_KEYS.ADMIN_CATEGORIES, INITIAL_CATEGORIES);
     this.activities = loadStored(STORAGE_KEYS.ADMIN_ACTIVITIES, INITIAL_ADMIN_ACTIVITIES);
     this.recalculateCounts();
   }
@@ -64,20 +59,6 @@ class AdminService {
       ).length;
       return { ...inst, registeredStudentCount: count };
     });
-
-    this.categories = this.categories.map((cat) => {
-      let count = 0;
-      if (cat.type === 'academicYear') {
-        count = this.students.filter((s) => s.academicYear === cat.name).length;
-      } else if (cat.type === 'department') {
-        count = this.students.filter(
-          (s) => s.department.toLowerCase().trim() === cat.name.toLowerCase().trim(),
-        ).length;
-      } else if (cat.type === 'cohortGroup') {
-        count = this.students.filter((s) => s.groupCategory === cat.name).length;
-      }
-      return { ...cat, studentCount: count };
-    });
   }
 
   // ==========================================
@@ -86,17 +67,14 @@ class AdminService {
   async getOverviewMetrics(): Promise<AdminOverviewMetrics> {
     const students = await this.getStudents();
     const institutions = await this.getInstitutions();
-    const categories = await this.getCategories();
 
     const activeStudents = students.filter((s) => s.accountStatus === 'Active').length;
-    const cohorts = categories.filter((c) => c.type === 'cohortGroup').length;
 
     return {
       totalRegisteredStudents: students.length,
       totalInstitutions: institutions.length,
       activeStudents,
       studentsAddedRecently: 18,
-      totalCohorts: cohorts,
       systemHealth: '100% Operational',
     };
   }
@@ -120,20 +98,6 @@ class AdminService {
     }));
   }
 
-  async getCategoryDistribution(): Promise<
-    Array<{ name: string; count: number; percentage: number }>
-  > {
-    const students = await this.getStudents();
-    const categories = await this.getCategories();
-    const cohorts = categories.filter((c) => c.type === 'cohortGroup');
-    const total = students.length || 1;
-    return cohorts.map((c) => ({
-      name: c.name,
-      count: c.studentCount,
-      percentage: Math.round((c.studentCount / total) * 100),
-    }));
-  }
-
   // ==========================================
   // Student Registration (Core Feature)
   // ==========================================
@@ -144,7 +108,6 @@ class AdminService {
     institution: string;
     academicYear: '1st Year' | '2nd Year' | '3rd Year' | '4th Year';
     department: string;
-    groupCategory: string;
     studentId: string;
     location?: string;
   }): Promise<AdminStudentItem> {
@@ -154,7 +117,6 @@ class AdminService {
     if (!studentData.institution.trim()) throw new Error('Academic institution is required.');
     if (!studentData.department.trim()) throw new Error('Department is required.');
     if (!studentData.academicYear) throw new Error('Academic year is required.');
-    if (!studentData.groupCategory.trim()) throw new Error('Scholar cohort/group is required.');
 
     // 2. Validate formats
     const emailErr = validateEmail(studentData.email);
@@ -188,13 +150,10 @@ class AdminService {
       institution: studentData.institution.trim(),
       department: studentData.department.trim(),
       academicYear: studentData.academicYear,
-      groupCategory: studentData.groupCategory.trim(),
       accountStatus: 'Active',
       registrationDate: new Date().toISOString().split('T')[0],
       availabilityStatus: 'Full Weekend Available',
       location: studentData.location?.trim() || 'Tamil Nadu, India',
-      skills: ['Foundational Problem Solving', 'Web Engineering'],
-      bio: `${studentData.academicYear} scholar studying ${studentData.department} at ${studentData.institution}.`,
     };
 
     if (isSupabaseConfigured) {
@@ -204,13 +163,6 @@ class AdminService {
           .from('institutions')
           .select('id')
           .ilike('institution_name', `%${studentData.institution.trim()}%`)
-          .maybeSingle();
-
-        // Resolve group_id
-        const { data: grpData } = await supabase
-          .from('student_groups')
-          .select('id')
-          .ilike('group_name', `%${studentData.groupCategory.trim()}%`)
           .maybeSingle();
 
         // Generate synthetic UUID for profile if direct insert
@@ -228,7 +180,6 @@ class AdminService {
             academic_year: newStudent.academicYear,
             department: newStudent.department,
             institution_id: instData?.id || null,
-            group_id: grpData?.id || null,
             account_status: 'Active',
           })
           .select()
@@ -251,7 +202,7 @@ class AdminService {
       adminName: CURRENT_ADMIN_USER.name,
       affectedRecord: `Scholar ${newStudent.name} (${newStudent.studentId})`,
       actionType: 'Create',
-      details: `Registered scholar with Student role for ${newStudent.institution} (${newStudent.groupCategory}).`,
+      details: `Registered scholar with Student role for ${newStudent.institution}.`,
     });
 
     return newStudent;
@@ -289,7 +240,6 @@ class AdminService {
             phone: updated.phone,
             department: updated.department,
             academic_year: updated.academicYear,
-            bio: updated.bio,
           })
           .eq('id', id);
       } catch (err) {
@@ -306,7 +256,7 @@ class AdminService {
       adminName: CURRENT_ADMIN_USER.name,
       affectedRecord: `Scholar ${updated.name} (${updated.studentId})`,
       actionType: 'Update',
-      details: `Updated official registration information, department, or cohort assignment.`,
+      details: `Updated official registration information or department transfer.`,
     });
 
     return updated;
@@ -365,7 +315,6 @@ class AdminService {
       const institution = (row.institution || '').trim();
       const department = (row.department || '').trim();
       const academicYear = (row.academicyear || row.academic_year || '').trim();
-      const groupCategory = (row.groupcategory || row.group_category || '').trim();
       const studentId = (row.studentid || row.student_id || '').trim();
 
       const errors: string[] = [];
@@ -399,7 +348,6 @@ class AdminService {
       if (!institution) errors.push('Institution is required');
       if (!department) errors.push('Department is required');
       if (!academicYear) errors.push('Academic year is required');
-      if (!groupCategory) errors.push('Group category is required');
 
       rows.push({
         rowNumber: idx + 2,
@@ -409,7 +357,6 @@ class AdminService {
         institution,
         department,
         academicYear,
-        groupCategory,
         studentId,
         isValid: errors.length === 0,
         errors,
@@ -441,7 +388,7 @@ class AdminService {
     }
 
     const headers = lines[0].split(',').map((h) => h.trim().toLowerCase().replace(/['"]/g, ''));
-    const requiredCols = ['name', 'email', 'phone', 'institution', 'department', 'academicyear', 'groupcategory', 'studentid'];
+    const requiredCols = ['name', 'email', 'phone', 'institution', 'department', 'academicyear', 'studentid'];
     const missing = requiredCols.filter((col) => !headers.includes(col));
 
     if (missing.length > 0) {
@@ -457,7 +404,6 @@ class AdminService {
       institution: headers.indexOf('institution'),
       department: headers.indexOf('department'),
       academicYear: headers.indexOf('academicyear'),
-      groupCategory: headers.indexOf('groupcategory'),
       studentId: headers.indexOf('studentid'),
     };
 
@@ -474,7 +420,6 @@ class AdminService {
       const institution = values[colIndices.institution] || '';
       const department = values[colIndices.department] || '';
       const academicYear = values[colIndices.academicYear] || '';
-      const groupCategory = values[colIndices.groupCategory] || '';
       const studentId = values[colIndices.studentId] || '';
 
       const errors: string[] = [];
@@ -509,7 +454,6 @@ class AdminService {
       if (!institution) errors.push('Institution is required');
       if (!department) errors.push('Department is required');
       if (!academicYear) errors.push('Academic year is required');
-      if (!groupCategory) errors.push('Group category is required');
 
       rows.push({
         rowNumber: rowNum,
@@ -519,7 +463,6 @@ class AdminService {
         institution,
         department,
         academicYear,
-        groupCategory,
         studentId,
         isValid: errors.length === 0,
         errors,
@@ -555,13 +498,10 @@ class AdminService {
         academicYear: (['1st Year', '2nd Year', '3rd Year', '4th Year'].includes(r.academicYear)
           ? r.academicYear
           : '3rd Year') as AdminStudentItem['academicYear'],
-        groupCategory: r.groupCategory,
         accountStatus: 'Active',
         registrationDate: new Date().toISOString().split('T')[0],
         availabilityStatus: 'Full Weekend Available',
         location: 'Tamil Nadu, India',
-        skills: ['Technical Problem Solving'],
-        bio: `${r.academicYear} scholar studying ${r.department} at ${r.institution}.`,
       }));
 
     this.students = [...newStudents, ...this.students];
@@ -593,7 +533,6 @@ class AdminService {
     institution?: string;
     academicYear?: string;
     department?: string;
-    groupCategory?: string;
     accountStatus?: string;
   }): Promise<AdminStudentItem[]> {
     if (isSupabaseConfigured) {
@@ -610,10 +549,7 @@ class AdminService {
             department,
             student_id,
             account_status,
-            skills,
-            bio,
-            institutions (institution_name),
-            student_groups (group_name)
+            institutions (institution_name)
           `)
           .eq('role', 'student');
 
@@ -626,14 +562,11 @@ class AdminService {
             institution: d.institutions?.institution_name || 'Anna University',
             department: d.department || 'Computer Science & Engineering',
             academicYear: d.academic_year || '3rd Year',
-            groupCategory: d.student_groups?.group_name || 'Tech Cohort 2024',
             studentId: d.student_id || `MS-2024-${String(idx + 1).padStart(3, '0')}`,
             accountStatus: d.account_status,
             registrationDate: '2024-07-15',
             availabilityStatus: 'Full Weekend Available',
             location: 'Tamil Nadu, India',
-            skills: d.skills || ['Python', 'Problem Solving'],
-            bio: d.bio || 'Maatram Scholar',
           }));
         }
       } catch (err) {
@@ -666,10 +599,6 @@ class AdminService {
 
     if (filters.department && filters.department !== 'All') {
       list = list.filter((s) => s.department === filters.department);
-    }
-
-    if (filters.groupCategory && filters.groupCategory !== 'All') {
-      list = list.filter((s) => s.groupCategory === filters.groupCategory);
     }
 
     if (filters.accountStatus && filters.accountStatus !== 'All') {
@@ -866,119 +795,6 @@ class AdminService {
       actionType: 'Delete',
       details: `Removed institution with 0 registered scholars.`,
     });
-  }
-
-  // ==========================================
-  // Categories & Groups
-  // ==========================================
-  async getCategories(): Promise<CategoryGroupItem[]> {
-    if (isSupabaseConfigured) {
-      try {
-        const { data, error } = await supabase.from('student_groups').select('*');
-        if (!error && data && data.length > 0) {
-          const dbCohorts: CategoryGroupItem[] = data.map((d: any) => ({
-            id: d.id,
-            name: d.group_name,
-            type: 'cohortGroup',
-            description: d.description || '',
-            studentCount: this.students.filter((s) => s.groupCategory === d.group_name).length,
-            createdAt: d.created_at?.split('T')[0] || '2024-06-01',
-          }));
-          const others = this.categories.filter((c) => c.type !== 'cohortGroup');
-          this.categories = [...others, ...dbCohorts];
-        }
-      } catch (err) {
-        console.warn('Supabase getCategories fallback:', err);
-      }
-    }
-
-    this.recalculateCounts();
-    return [...this.categories];
-  }
-
-  async addCategory(catData: {
-    name: string;
-    type: CategoryGroupItem['type'];
-    description?: string;
-  }): Promise<CategoryGroupItem> {
-    const dup = this.categories.find(
-      (c) => c.type === catData.type && c.name.toLowerCase() === catData.name.trim().toLowerCase(),
-    );
-    if (dup) throw new Error(`Category "${catData.name}" already exists under ${catData.type}.`);
-
-    const newCat: CategoryGroupItem = {
-      ...catData,
-      id: `cat-${Date.now()}`,
-      name: catData.name.trim(),
-      studentCount: 0,
-      createdAt: new Date().toISOString().split('T')[0],
-    };
-
-    if (isSupabaseConfigured && catData.type === 'cohortGroup') {
-      try {
-        const { data, error } = await supabase
-          .from('student_groups')
-          .insert({
-            group_name: newCat.name,
-            description: newCat.description,
-          })
-          .select()
-          .maybeSingle();
-
-        if (!error && data) {
-          newCat.id = data.id;
-        }
-      } catch (err) {
-        console.warn('Supabase addCategory error:', err);
-      }
-    }
-
-    this.categories = [...this.categories, newCat];
-    saveStored(STORAGE_KEYS.ADMIN_CATEGORIES, this.categories);
-
-    this.logActivity({
-      action: 'Category Created',
-      adminName: CURRENT_ADMIN_USER.name,
-      affectedRecord: `${newCat.type}: "${newCat.name}"`,
-      actionType: 'Create',
-      details: `Created new ${newCat.type} taxonomy category.`,
-    });
-
-    return newCat;
-  }
-
-  async updateCategory(id: string, updates: Partial<CategoryGroupItem>): Promise<CategoryGroupItem> {
-    const idx = this.categories.findIndex((c) => c.id === id);
-    if (idx === -1) throw new Error('Category not found.');
-
-    const updated = { ...this.categories[idx], ...updates };
-
-    if (isSupabaseConfigured && updated.type === 'cohortGroup') {
-      try {
-        await supabase
-          .from('student_groups')
-          .update({
-            group_name: updated.name,
-            description: updated.description,
-          })
-          .eq('id', id);
-      } catch (err) {
-        console.warn('Supabase updateCategory error:', err);
-      }
-    }
-
-    this.categories[idx] = updated;
-    saveStored(STORAGE_KEYS.ADMIN_CATEGORIES, this.categories);
-
-    this.logActivity({
-      action: 'Category Updated',
-      adminName: CURRENT_ADMIN_USER.name,
-      affectedRecord: `${updated.type}: "${updated.name}"`,
-      actionType: 'Update',
-      details: `Updated categorization naming or description.`,
-    });
-
-    return updated;
   }
 
   // ==========================================

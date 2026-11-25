@@ -19,13 +19,10 @@ function createMockStudent(id, overrides = {}) {
     institution: 'College of Engineering, Guindy',
     department: 'Computer Science & Engineering',
     academicYear: '3rd Year',
-    groupCategory: 'Tech Cohort 2024',
     enrollmentStatus: 'Active',
     availabilityStatus: 'Full Weekend Available',
-    skills: ['React', 'TypeScript'],
     location: 'Chennai',
     sessionsAttended: 5,
-    rsvpRate: 90,
     lastActive: 'Today',
     weeklySlots: {},
     ...overrides,
@@ -64,7 +61,6 @@ console.log('Scenario 1: All students available');
   const criteria = {
     institutions: [],
     academicYears: [],
-    groupCategories: [],
     startDate: '2026-11-21',
     endDate: '2026-11-21',
     durationHours: 2,
@@ -96,7 +92,6 @@ console.log('\nScenario 2: No students available');
   const criteria = {
     institutions: [],
     academicYears: [],
-    groupCategories: [],
     startDate: '2026-11-21',
     endDate: '2026-11-21',
     durationHours: 2,
@@ -135,7 +130,6 @@ console.log('\nScenario 3: Partially submitted availability');
   const criteria = {
     institutions: [],
     academicYears: [],
-    groupCategories: [],
     startDate: '2026-11-21',
     endDate: '2026-11-21',
     durationHours: 2,
@@ -162,7 +156,6 @@ console.log('\nScenario 4: Students with missing submissions');
   const criteria = {
     institutions: [],
     academicYears: [],
-    groupCategories: [],
     startDate: '2026-11-21',
     endDate: '2026-11-21',
     durationHours: 2,
@@ -193,7 +186,6 @@ console.log('\nScenario 5: Multiple institutions');
   const criteria = {
     institutions: ['College of Engineering, Guindy', 'Madras Institute of Technology'],
     academicYears: [],
-    groupCategories: [],
     startDate: '2026-11-21',
     endDate: '2026-11-21',
   };
@@ -223,7 +215,6 @@ console.log('\nScenario 6: Multiple academic years');
   const criteria = {
     institutions: [],
     academicYears: ['3rd Year', '4th Year'],
-    groupCategories: [],
     startDate: '2026-11-21',
     endDate: '2026-11-21',
   };
@@ -288,7 +279,6 @@ console.log('\nScenario 8: Equal availability percentages (tie-breaking)');
   const criteria = {
     institutions: [],
     academicYears: [],
-    groupCategories: [],
     startDate: '2026-11-21',
     endDate: '2026-11-21',
     durationHours: 2,
@@ -315,7 +305,6 @@ console.log('\nScenario 9: Empty student selection');
   const criteria = {
     institutions: ['NonExistent College'],
     academicYears: [],
-    groupCategories: [],
     startDate: '2026-11-21',
     endDate: '2026-11-21',
     durationHours: 2,

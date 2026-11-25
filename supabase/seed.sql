@@ -15,17 +15,7 @@ VALUES
   ('c0000000-0000-0000-0000-000000000007', 'Government College of Technology', 'GCT', 'Thadagam Road, Coimbatore, Tamil Nadu', '{"principal": "Dr. P. Thamarai", "email": "gct.principal@gct.ac.in", "phone": "+91 422 243 2221"}', 'Active')
 ON CONFLICT (institution_code) DO NOTHING;
 
--- 2. Insert Student Groups / Categorization
-INSERT INTO public.student_groups (id, group_name, description)
-VALUES
-  ('g0000000-0000-0000-0000-000000000001', 'Tech Cohort 2024', 'Software Engineering, Full-Stack Development, and Systems Architecture circle.'),
-  ('g0000000-0000-0000-0000-000000000002', 'Placement Ready Track', 'Final year pre-placement aptitude, technical interview, and resume mastery group.'),
-  ('g0000000-0000-0000-0000-000000000003', 'Core Engineering Circle', 'Mechanical, Electrical, VLSI, and Embedded Systems specialization track.'),
-  ('g0000000-0000-0000-0000-000000000004', 'Data Science & AI', 'Machine Learning, Deep Learning, Big Data Analytics, and Prompt Engineering cohort.'),
-  ('g0000000-0000-0000-0000-000000000005', 'Cloud & DevOps Cohort', 'AWS, Azure, Docker, Kubernetes, and CI/CD infrastructure mastery circle.')
-ON CONFLICT (group_name) DO NOTHING;
-
--- 3. Note for Demo Auth Users:
+-- 2. Note for Demo Auth Users:
 -- In Supabase, auth users are created through `auth.users`.
 -- To manually seed test auth users in the Supabase SQL editor:
 /*

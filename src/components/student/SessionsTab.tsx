@@ -103,16 +103,16 @@ END:VCALENDAR`;
           <p className="mt-1 text-xs text-charcoal/60">
             {modeFilter !== 'All'
               ? `You currently have no ${modeFilter.toLowerCase()} sessions scheduled.`
-              : 'Accept event invitations or keep your weekly availability updated to be matched with upcoming sessions.'}
+              : 'Keep your weekly availability updated so the Maatram Office Team can match and schedule upcoming sessions for your department.'}
           </p>
           <div className="mt-5">
             <Button
               variant="primary"
               size="sm"
-              onClick={() => onNavigateTab('invitations')}
+              onClick={() => onNavigateTab('availability')}
               className="text-xs font-bold"
             >
-              Browse Invitations
+              Update Availability
             </Button>
           </div>
         </div>

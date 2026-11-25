@@ -27,10 +27,10 @@ import type {
   AdminStudentItem,
   BulkImportRow,
   BulkImportSummary,
-  CategoryGroupItem,
   InstitutionItem,
 } from '../../types/admin';
 import { adminService } from '../../services/admin/adminService';
+import { DEPARTMENTS_LIST } from '../../services/office/mockOfficeData';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { Card, CardContent, CardHeader } from '../ui/Card';
@@ -38,7 +38,6 @@ import { Input } from '../ui/Input';
 
 interface StudentRegistrationTabProps {
   institutions: InstitutionItem[];
-  categories: CategoryGroupItem[];
   onStudentRegistered: (student: AdminStudentItem) => void;
   onBulkImportCompleted: (count: number) => void;
   onShowToast: (message: string, type?: 'success' | 'error' | 'info') => void;
@@ -47,7 +46,6 @@ interface StudentRegistrationTabProps {
 
 export function StudentRegistrationTab({
   institutions,
-  categories,
   onStudentRegistered,
   onBulkImportCompleted,
   onShowToast,
@@ -63,7 +61,6 @@ export function StudentRegistrationTab({
   const [institution, setInstitution] = useState(institutions[0]?.name || 'College of Engineering, Guindy');
   const [academicYear, setAcademicYear] = useState<AdminStudentItem['academicYear']>('3rd Year');
   const [department, setDepartment] = useState('Computer Science & Engineering');
-  const [groupCategory, setGroupCategory] = useState('Tech Cohort 2024');
   const [location, setLocation] = useState('Chennai, Tamil Nadu');
 
   const [savingSingle, setSavingSingle] = useState(false);
@@ -98,7 +95,6 @@ export function StudentRegistrationTab({
         institution,
         academicYear,
         department,
-        groupCategory,
         studentId,
         location,
       });
@@ -121,12 +117,12 @@ export function StudentRegistrationTab({
   };
 
   // Sample CSV format
-  const sampleCsvData = `name,email,phone,institution,department,academicYear,groupCategory,studentId
-Suresh Venkat,suresh.v@maatram.dev,+91 9840123456,College of Engineering Guindy,Computer Science & Engineering,3rd Year,Tech Cohort 2024,MS-2024-801
-Kavya Sundaram,kavya.s@maatram.dev,+91 9840123457,Madras Institute of Technology,Information Technology,2nd Year,Data & AI Cohort,MS-2024-802
-Ranjith Kumar,ranjith.k@maatram.dev,+91 9840123458,PSG College of Technology,Mechanical Engineering,4th Year,Core Engineering Guild,MS-2024-803
-Priya Dharshini K,student@maatram.dev,+91 9876543210,College of Engineering Guindy,Computer Science & Engineering,3rd Year,Tech Cohort 2024,MS-2024-001
-Invalid Scholar,invalid-email,12345,CIT,,3rd Year,,MS-2024-805`;
+  const sampleCsvData = `name,email,phone,institution,department,academicYear,studentId
+Suresh Venkat,suresh.v@maatram.dev,+91 9840123456,College of Engineering Guindy,Computer Science & Engineering,3rd Year,MS-2024-801
+Kavya Sundaram,kavya.s@maatram.dev,+91 9840123457,Madras Institute of Technology,Information Technology,2nd Year,MS-2024-802
+Ranjith Kumar,ranjith.k@maatram.dev,+91 9840123458,PSG College of Technology,Mechanical Engineering,4th Year,MS-2024-803
+Priya Dharshini K,student@maatram.dev,+91 9876543210,College of Engineering Guindy,Computer Science & Engineering,3rd Year,MS-2024-001
+Invalid Scholar,invalid-email,12345,CIT,,3rd Year,MS-2024-805`;
 
   const handleLoadSampleCsv = () => {
     setCsvText(sampleCsvData);
@@ -185,8 +181,7 @@ Invalid Scholar,invalid-email,12345,CIT,,3rd Year,,MS-2024-805`;
     }
   };
 
-  const departmentsList = categories.filter((c) => c.type === 'department');
-  const cohortGroupsList = categories.filter((c) => c.type === 'cohortGroup');
+  const departmentsList = DEPARTMENTS_LIST;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -401,7 +396,7 @@ Invalid Scholar,invalid-email,12345,CIT,,3rd Year,,MS-2024-805`;
                   </div>
 
                   {/* Department */}
-                  <div>
+                  <div className="sm:col-span-2">
                     <label className="block text-xs font-medium text-charcoal mb-1.5">
                       Department / Branch
                     </label>
@@ -410,27 +405,9 @@ Invalid Scholar,invalid-email,12345,CIT,,3rd Year,,MS-2024-805`;
                       onChange={(e) => setDepartment(e.target.value)}
                       className="w-full rounded-lg border border-charcoal/25 bg-white p-2.5 text-xs text-ink focus:border-ink focus:outline-none focus:ring-1 focus:ring-gold"
                     >
-                      {departmentsList.map((d) => (
-                        <option key={d.id} value={d.name}>
-                          {d.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Group / Cohort */}
-                  <div>
-                    <label className="block text-xs font-medium text-charcoal mb-1.5">
-                      Scholar Cohort Group
-                    </label>
-                    <select
-                      value={groupCategory}
-                      onChange={(e) => setGroupCategory(e.target.value)}
-                      className="w-full rounded-lg border border-charcoal/25 bg-white p-2.5 text-xs text-ink focus:border-ink focus:outline-none focus:ring-1 focus:ring-gold"
-                    >
-                      {cohortGroupsList.map((c) => (
-                        <option key={c.id} value={c.name}>
-                          {c.name}
+                      {departmentsList.map((dept) => (
+                        <option key={dept} value={dept}>
+                          {dept}
                         </option>
                       ))}
                     </select>
@@ -511,7 +488,7 @@ Invalid Scholar,invalid-email,12345,CIT,,3rd Year,,MS-2024-805`;
                     Paste CSV Data (or load sample above):
                   </label>
                   <span className="text-[10px] text-charcoal/60 font-mono">
-                    Required headers: name, email, phone, institution, department, academicYear, groupCategory, studentId
+                    Required headers: name, email, phone, institution, department, academicYear, studentId
                   </span>
                 </div>
                 <textarea
@@ -521,7 +498,7 @@ Invalid Scholar,invalid-email,12345,CIT,,3rd Year,,MS-2024-805`;
                     setCsvText(e.target.value);
                     handleParseCsv(e.target.value);
                   }}
-                  placeholder="name,email,phone,institution,department,academicYear,groupCategory,studentId&#10;Priya Dharshini K,priya@maatram.dev,+91 9840123456,CEG,CSE,3rd Year,Tech Cohort 2024,MS-2024-901"
+                  placeholder="name,email,phone,institution,department,academicYear,studentId&#10;Priya Dharshini K,priya@maatram.dev,+91 9840123456,CEG,CSE,3rd Year,MS-2024-901"
                   className="w-full rounded-xl border border-charcoal/25 bg-white p-3 font-mono text-xs text-ink placeholder:text-charcoal/40 focus:border-ink focus:outline-none focus:ring-1 focus:ring-gold"
                 />
               </div>

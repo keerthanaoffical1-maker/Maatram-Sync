@@ -11,7 +11,6 @@ export type AccountStatus = 'Active' | 'Inactive';
 export type AvailabilityStatus = 'available' | 'unavailable' | 'tentative';
 export type EventMode = 'Online' | 'Offline';
 export type EventStatus = 'Draft' | 'Scheduled' | 'In Progress' | 'Completed' | 'Cancelled';
-export type InvitationResponseStatus = 'Pending' | 'Accepted' | 'Declined';
 
 export interface Database {
   public: {
@@ -26,13 +25,8 @@ export interface Database {
           institution_id: string | null;
           academic_year: string | null;
           department: string | null;
-          group_id: string | null;
           student_id: string | null;
           account_status: AccountStatus;
-          skills: string[] | null;
-          bio: string | null;
-          linkedin_url: string | null;
-          github_url: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -45,13 +39,8 @@ export interface Database {
           institution_id?: string | null;
           academic_year?: string | null;
           department?: string | null;
-          group_id?: string | null;
           student_id?: string | null;
           account_status?: AccountStatus;
-          skills?: string[] | null;
-          bio?: string | null;
-          linkedin_url?: string | null;
-          github_url?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -64,13 +53,8 @@ export interface Database {
           institution_id?: string | null;
           academic_year?: string | null;
           department?: string | null;
-          group_id?: string | null;
           student_id?: string | null;
           account_status?: AccountStatus;
-          skills?: string[] | null;
-          bio?: string | null;
-          linkedin_url?: string | null;
-          github_url?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -101,26 +85,6 @@ export interface Database {
           location?: string;
           contact_details?: Json;
           status?: 'Active' | 'Inactive';
-          created_at?: string;
-        };
-      };
-      student_groups: {
-        Row: {
-          id: string;
-          group_name: string;
-          description: string | null;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          group_name: string;
-          description?: string | null;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          group_name?: string;
-          description?: string | null;
           created_at?: string;
         };
       };
@@ -165,7 +129,6 @@ export interface Database {
           end_datetime: string;
           target_institutions: string[];
           target_academic_years: string[];
-          target_groups: string[];
           required_participants: number;
           created_by: string | null;
           status: EventStatus;
@@ -185,7 +148,6 @@ export interface Database {
           end_datetime: string;
           target_institutions?: string[];
           target_academic_years?: string[];
-          target_groups?: string[];
           required_participants?: number;
           created_by?: string | null;
           status?: EventStatus;
@@ -205,7 +167,6 @@ export interface Database {
           end_datetime?: string;
           target_institutions?: string[];
           target_academic_years?: string[];
-          target_groups?: string[];
           required_participants?: number;
           created_by?: string | null;
           status?: EventStatus;
@@ -213,35 +174,6 @@ export interface Database {
           meeting_url?: string | null;
           created_at?: string;
           updated_at?: string;
-        };
-      };
-      event_invitations: {
-        Row: {
-          id: string;
-          event_id: string;
-          student_id: string;
-          response_status: InvitationResponseStatus;
-          invited_at: string;
-          responded_at: string | null;
-          decline_reason: string | null;
-        };
-        Insert: {
-          id?: string;
-          event_id: string;
-          student_id: string;
-          response_status?: InvitationResponseStatus;
-          invited_at?: string;
-          responded_at?: string | null;
-          decline_reason?: string | null;
-        };
-        Update: {
-          id?: string;
-          event_id?: string;
-          student_id?: string;
-          response_status?: InvitationResponseStatus;
-          invited_at?: string;
-          responded_at?: string | null;
-          decline_reason?: string | null;
         };
       };
       activity_logs: {

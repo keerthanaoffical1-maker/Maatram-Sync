@@ -1,7 +1,6 @@
 import {
   CalendarCheck2,
   CalendarDays,
-  Inbox,
   LayoutDashboard,
   LogOut,
   Sparkles,
@@ -10,13 +9,12 @@ import {
 } from 'lucide-react';
 import { BrandMark } from '../auth/BrandMark';
 
-export type StudentNavTab = 'overview' | 'availability' | 'invitations' | 'sessions' | 'profile';
+export type StudentNavTab = 'overview' | 'availability' | 'sessions' | 'profile';
 
 interface SidebarProps {
   activeTab: StudentNavTab;
   onSelectTab: (tab: StudentNavTab) => void;
   onLogout: () => void;
-  pendingInvitationsCount?: number;
   isMobileOpen?: boolean;
   onCloseMobile?: () => void;
 }
@@ -25,7 +23,6 @@ export function Sidebar({
   activeTab,
   onSelectTab,
   onLogout,
-  pendingInvitationsCount = 0,
   isMobileOpen = false,
   onCloseMobile,
 }: SidebarProps) {
@@ -37,7 +34,6 @@ export function Sidebar({
   }> = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
     { id: 'availability', label: 'My Availability', icon: CalendarCheck2 },
-    { id: 'invitations', label: 'My Invitations', icon: Inbox, badge: pendingInvitationsCount },
     { id: 'sessions', label: 'Upcoming Sessions', icon: CalendarDays },
     { id: 'profile', label: 'My Profile', icon: UserCircle },
   ];
@@ -120,7 +116,7 @@ export function Sidebar({
             </span>
             <div>
               <p className="text-xs font-semibold text-white">Maatram Scholar</p>
-              <p className="text-[10px] text-white/60">Cohort 2024 • Tech Guild</p>
+              <p className="text-[10px] text-white/60">Active Student Portal</p>
             </div>
           </div>
         </div>

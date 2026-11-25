@@ -131,7 +131,7 @@ export function SessionManagementTab({
           <CalendarDays className="mx-auto h-12 w-12 text-charcoal/30" />
           <h3 className="mt-4 text-base font-bold text-ink">No sessions scheduled yet</h3>
           <p className="mt-1 text-xs text-charcoal/60">
-            Create an event in Event Planning to schedule your first cohort session.
+            Create an event in Event Planning to schedule your first session.
           </p>
         </div>
       ) : (
@@ -139,10 +139,6 @@ export function SessionManagementTab({
           {sessions.map((session) => {
             const isOnline = session.mode === 'Online';
             const isCancelled = session.status === 'Cancelled';
-            const acceptedRate =
-              session.invitedCount > 0
-                ? Math.round((session.acceptedCount / session.invitedCount) * 100)
-                : 0;
 
             return (
               <Card
@@ -238,32 +234,17 @@ export function SessionManagementTab({
                     </div>
                   </div>
 
-                  {/* Quota & Responses Meter */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 text-xs">
-                    <div className="rounded-lg border border-charcoal/10 bg-white p-2.5">
+                  {/* Target Capacity */}
+                  <div className="rounded-lg border border-charcoal/10 bg-white p-3 text-xs flex items-center justify-between">
+                    <div>
                       <span className="text-[10px] uppercase font-bold text-charcoal/60 block">
-                        Invited Scholars
+                        Target Capacity
                       </span>
-                      <span className="text-base font-extrabold text-ink">{session.invitedCount}</span>
+                      <span className="text-base font-extrabold text-ink">{session.requiredParticipants} Scholars Planned</span>
                     </div>
-
-                    <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-2.5">
-                      <span className="text-[10px] uppercase font-bold text-emerald-800 block">
-                        Confirmed Attendees
-                      </span>
-                      <span className="text-base font-extrabold text-emerald-900">
-                        {session.acceptedCount} ({acceptedRate}%)
-                      </span>
-                    </div>
-
-                    <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-2.5">
-                      <span className="text-[10px] uppercase font-bold text-amber-900 block">
-                        Pending RSVPs
-                      </span>
-                      <span className="text-base font-extrabold text-amber-950">
-                        {session.pendingCount}
-                      </span>
-                    </div>
+                    <Badge variant="gold" size="sm">
+                      Confirmed Session
+                    </Badge>
                   </div>
 
                   {/* Preparation Guidelines */}
@@ -424,7 +405,7 @@ export function SessionManagementTab({
           isOpen={Boolean(cancellingSession)}
           onClose={() => setCancellingSession(null)}
           title="Cancel Scheduled Session"
-          description="Are you sure you want to cancel this session? This will alert invited scholars and mentors."
+          description="Are you sure you want to cancel this session? This will alert enrolled scholars and mentors."
           footer={
             <div className="flex items-center justify-between w-full">
               <Button
@@ -455,8 +436,8 @@ export function SessionManagementTab({
                 </p>
                 <p className="mt-1 leading-relaxed">
                   Scheduled for <strong>{cancellingSession.selectedDate}</strong> at{' '}
-                  <strong>{cancellingSession.selectedTimeSlot}</strong> with{' '}
-                  <strong>{cancellingSession.acceptedCount} confirmed participants</strong>.
+                  <strong>{cancellingSession.selectedTimeSlot}</strong> with target capacity of{' '}
+                  <strong>{cancellingSession.requiredParticipants} scholars</strong>.
                 </p>
               </div>
             </div>
